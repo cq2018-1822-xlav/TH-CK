@@ -15,13 +15,28 @@ Hàm trả về
 */
 int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int kWidth, int kHeight, int method)
 {
-    return 0;
+
+	// Switch method
+	switch (method)
+	{
+	case 0: // Lọc Trung Bình
+	{
+		return 0;
+	}
+	case 1: // Lọc Trung Vị
+	{
+		return 0;
+	}
+	case 2: // Lọc Gauss
+	{
+		return 0;
+	}
+	default:
+		std::cout << "[EXCEPTION] Unsupprted this method.\n";
+		return 1;
+	}
 }
 
-Blur::Blur()
-{
-}
+Blur::Blur() = default;
 
-Blur::~Blur()
-{
-}
+Blur::~Blur() = default;

@@ -4,8 +4,6 @@
 
 #include "CV_Include.h"
 #include "Convolution.h"
-#include "Blur.h"
-#include "Converter.h"
 
 class EdgeDetector
 {

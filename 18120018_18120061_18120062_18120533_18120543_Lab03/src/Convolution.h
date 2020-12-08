@@ -23,6 +23,8 @@ public:
 	1: nếu tính thất bại (không đọc được ảnh input,...)
 	*/
 	int DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationImage);
+    int DoConvolution_1(const cv::Mat& sourceImage, cv::Mat& destinationImage);
+	int DoConvolution_2(const cv::Mat& sourceImage, cv::Mat& destinationImage);
 	Convolution();
 	~Convolution();
 };

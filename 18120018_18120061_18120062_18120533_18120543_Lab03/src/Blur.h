@@ -3,6 +3,7 @@
 #define BLUR_H
 
 #include "CV_Include.h"
+#include "Convolution.h"
 
 class Blur
 {

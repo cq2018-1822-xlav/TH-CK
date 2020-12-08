@@ -1,6 +1,8 @@
 ﻿#include <iostream>
 #include <functional>
 #include "EdgeDetector.h"
+#include "Blur.h"
+#include "Converter.h"
 
 static int __str_cmp__(const char* string_1, const char* string_2)
 {
@@ -25,6 +27,65 @@ int main(int argc, char* argv[]) {
 	Blur blur;
 
 	// Put your test code here
+	// define 5x5 Gaussian kernel
+	float kernel[25] = { 1 / 256.0f,  4 / 256.0f,  6 / 256.0f,  4 / 256.0f, 1 / 256.0f,
+						 4 / 256.0f, 16 / 256.0f, 24 / 256.0f, 16 / 256.0f, 4 / 256.0f,
+						 6 / 256.0f, 24 / 256.0f, 36 / 256.0f, 24 / 256.0f, 6 / 256.0f,
+						 4 / 256.0f, 16 / 256.0f, 24 / 256.0f, 16 / 256.0f, 4 / 256.0f,
+						 1 / 256.0f,  4 / 256.0f,  6 / 256.0f,  4 / 256.0f, 1 / 256.0f };
+	// radius-1 Gaussian kernel, size 9
+	float gaussian_1[9] = {
+		0.00022923296f,0.0059770769f,0.060597949f,
+		0.24173197f,0.38292751f, 0.24173197f,
+		0.060597949f,0.0059770769f,0.00022923296f };
+	// radius-2 Gaussian kernel, size 15
+	std::vector<float> gaussian_2 = {
+		0.00048869418f,0.0024031631f,0.0092463447f,
+		0.027839607f,0.065602221f,0.12099898f,0.17469721f,
+		0.19744757f,
+		0.17469721f,0.12099898f,0.065602221f,0.027839607f,
+		0.0092463447f,0.0024031631f,0.00048869418f
+	};
+	//radius-3 Gaussian kernel, size 23
+	std::vector<float> gaussian_3 = {
+		0.00016944126f,0.00053842377f,0.0015324751f,0.0039068931f,
+		0.0089216027f,0.018248675f,0.033434924f,0.054872241f,
+		0.080666073f,0.10622258f,0.12529446f,
+		0.13238440f,
+		0.12529446f,0.10622258f,0.080666073f,
+		0.054872241f,0.033434924f,0.018248675f,0.0089216027f,
+		0.0039068931f,0.0015324751f,0.00053842377f,0.00016944126f
+	};
+	//radius-4 Gaussian kernel, size 29
+	std::vector<float> gaussian_4 = {
+		0.00022466264f,0.00052009715f,0.0011314391f,0.0023129794f,
+		0.0044433107f,0.0080211498f,0.013606987f,0.021691186f,
+		0.032493830f,0.045742013f,0.060509924f,0.075220309f,
+		0.087870099f,0.096459411f,0.099505201f,0.096459411f,0.087870099f,
+		0.075220309f,0.060509924f,0.045742013f,0.032493830f,
+		0.021691186f,0.013606987f,0.0080211498f,0.0044433107f,
+		0.0023129794f,0.0011314391f,0.00052009715f,0.00022466264f,
+	};
+	Convolution convolution;
+	Converter converter;
+	cv::Mat inputImage = cv::imread("E:/lena.jpg", cv::IMREAD_ANYCOLOR);
+	cv::Mat inputImage2gray = cv::Mat(inputImage.cols, inputImage.rows, CV_8UC1, cv::Scalar(0));
+	// converter.Convert(inputImage, inputImage2gray, 1);
+	cv::Mat outputImage;
+	cv::cvtColor(inputImage, inputImage2gray, cv::COLOR_BGR2GRAY);
+	outputImage = cv::Mat(inputImage2gray.cols, inputImage2gray.rows, CV_8UC1, cv::Scalar(0));
+	// blur.BlurImage(inputImage2gray, outputImage, 5, 5, 0);
+	convolution.DoConvolution(inputImage2gray, outputImage);
+	// convolve2DFast(inputImage2gray.data, outputImage.data, inputImage2gray.cols, inputImage2gray.rows, gaussian_1, 3, 3);
+	cv::namedWindow("Origin image", cv::WINDOW_AUTOSIZE);
+	cv::imshow("Origin image", inputImage);
+	cv::namedWindow("Gray image", cv::WINDOW_AUTOSIZE);
+	cv::imshow("Gray image", inputImage2gray);
+	cv::namedWindow("Output image", cv::WINDOW_AUTOSIZE);
+	cv::imshow("Output image", outputImage);
+	cv::waitKey(0);
+
+	cv::destroyAllWindows();
 
 	// Code for CLI
 	if (__str_cmp__(argv[1], "--mean")) {
