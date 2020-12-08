@@ -18,10 +18,6 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
     return 0;
 }
 
-EdgeDetector::EdgeDetector()
-{
-}
+EdgeDetector::EdgeDetector() = default;
 
-EdgeDetector::~EdgeDetector()
-{
-}
+EdgeDetector::~EdgeDetector() = default;
