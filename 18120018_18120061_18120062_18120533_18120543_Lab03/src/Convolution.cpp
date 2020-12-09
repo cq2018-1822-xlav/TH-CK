@@ -22,51 +22,78 @@ Hàm trả về
 */
 int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationImage)
 {
-    int i, j, m, n, x, y, t;
-    uchar** inPtr, * outPtr, * ptr;
+    // Con trỏ quản lý vùng data Source Image
+    uchar* ptrSourceData = sourceImage.data;
+    // Con trỏ quản lý vùng data Destination Image
+    uchar* ptrDestinationData = destinationImage.data;
+
     int dataSizeX = sourceImage.cols;
     int dataSizeY = sourceImage.rows;
-    destinationImage = sourceImage.clone();
-    uchar* ptrSourceData = sourceImage.data;
-    uchar* ptrDestinationData = destinationImage.data;
-    int kernelCenterX, kernelCenterY;
-    int rowEnd, colEnd;
-    float sum;
-    int k, kernelSize;
 
-    if (!sourceImage.data || !destinationImage.data || this->_kernel.empty()) {
-        return 1;
-    }
+    int i, j, m, n, x, y, t;
+    uchar** inPtr, * outPtr, * ptr;
 
-    kernelCenterX = this->_kernelWidth >> 1;
-    kernelCenterY = this->_kernelHeight >> 1;
-    kernelSize = (this->_kernelWidth) * (this->_kernelHeight);
-    inPtr = new uchar * [kernelSize];
-    if (!inPtr) {
-        return 1;
-    }
+    int kernelSizeX = this->_kernelWidth;
+    int kernelSizeY = this->_kernelHeight;
 
-    ptr = (ptrSourceData + dataSizeX * kernelCenterY + kernelCenterX);
-    for (m = 0, t = 0; m < (this->_kernelHeight); ++m)
+    int kCenterX, kCenterY;
+    int rowEnd, colEnd;                             // ending indice for section divider
+    float sum;                                      // temp accumulation buffer
+    int k, kSize;
+    
+
+    // check validity of params
+    if (!ptrSourceData || !ptrDestinationData || this->_kernel.empty())
     {
-        for (n = 0; n < (this->_kernelWidth); ++n, ++t)
+        if (!ptrSourceData) {
+            std::cout << "[EXCEPTION] Error occurs with source data.\n";
+        }
+
+        if (!ptrDestinationData) {
+            std::cout << "[EXCEPTION] Error occurs with destination data.\n";
+        }
+
+        if (this->_kernel.empty()) {
+            std::cout << "[EXCEPTION] Error occurs with kernel data.\n";
+        }
+
+        return 1;
+    }
+    if (dataSizeX <= 0 || kernelSizeX <= 0) return 1;
+
+    // find center position of kernel (half of kernel size)
+    kCenterX = kernelSizeX >> 1;
+    kCenterY = kernelSizeY >> 1;
+    kSize = kernelSizeX * kernelSizeY;              // total kernel size
+
+    // allocate memeory for multi-cursor
+    inPtr = new unsigned char* [kSize];
+    if (!inPtr) return false;                        // allocation error
+
+    // set initial position of multi-cursor, NOTE: it is swapped instead of kernel
+    ptr = ptrSourceData + ((long long)dataSizeX * kCenterY + kCenterX); // the first cursor is shifted (kCenterX, kCenterY)
+    for (m = 0, t = 0; m < kernelSizeY; ++m)
+    {
+        for (n = 0; n < kernelSizeX; ++n, ++t)
         {
             inPtr[t] = ptr - n;
         }
         ptr -= dataSizeX;
     }
 
+    // init working  pointers
     outPtr = ptrDestinationData;
-    rowEnd = dataSizeY - kernelCenterY;  // bottom row partition divider
-    colEnd = dataSizeX - kernelCenterX;  // right column partition divider
 
-     // convolve rows from index=0 to index=kCenterY-1
-    y = kernelCenterY;
-    for (i = 0; i < kernelCenterY; ++i)
+    rowEnd = dataSizeY - kCenterY;                  // bottom row partition divider
+    colEnd = dataSizeX - kCenterX;                  // right column partition divider
+
+    // convolve rows from index=0 to index=kCenterY-1
+    y = kCenterY;
+    for (i = 0; i < kCenterY; ++i)
     {
         // partition #1 ***********************************
-        x = kernelCenterX;
-        for (j = 0; j < kernelCenterX; ++j)  // column from index=0 to index=kCenterX-1
+        x = kCenterX;
+        for (j = 0; j < kCenterX; ++j)                 // column from index=0 to index=kCenterX-1
         {
             sum = 0;
             t = 0;
@@ -74,231 +101,215 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             {
                 for (n = 0; n <= x; ++n)
                 {
-                    sum += *inPtr[t] * this->_kernel[t];
+                    sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
-                t += (this->_kernelWidth - x - 1);  // jump to next row
+                t += (kernelSizeX - x - 1);         // jump to next row
             }
 
             // store output
-            *outPtr = (unsigned char)((float)fabs(sum) + 0.5f);
+            *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kernelSize; ++k)
-                ++inPtr[k];  // move all cursors to next
+            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
         }
 
         // partition #2 ***********************************
-        for (j = kernelCenterX; j < colEnd; ++j)  // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
+        for (j = kCenterX; j < colEnd; ++j)            // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
         {
             sum = 0;
             t = 0;
             for (m = 0; m <= y; ++m)
             {
-                for (n = 0; n < this->_kernelWidth; ++n)
+                for (n = 0; n < kernelSizeX; ++n)
                 {
-                    sum += *inPtr[t] * this->_kernel[t];
+                    sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
             }
 
             // store output
-            *outPtr = (unsigned char)((float)fabs(sum) + 0.5f);
+            *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kernelSize; ++k)
-                ++inPtr[k];  // move all cursors to next
+            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
         }
 
         // partition #3 ***********************************
         x = 1;
-        for (j = colEnd; j < dataSizeX; ++j)  // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
+        for (j = colEnd; j < dataSizeX; ++j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
         {
             sum = 0;
             t = x;
             for (m = 0; m <= y; ++m)
             {
-                for (n = x; n < this->_kernelWidth; ++n)
+                for (n = x; n < kernelSizeX; ++n)
                 {
-                    sum += *inPtr[t] * this->_kernel[t];
+                    sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
-                t += x;  // jump to next row
+                t += x;                             // jump to next row
             }
 
             // store output
-            *outPtr = (unsigned char)((float)fabs(sum) + 0.5f);
+            *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kernelSize; ++k)
-                ++inPtr[k];  // move all cursors to next
+            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
         }
 
-        ++y;  // add one more row to convolve for next run
+        ++y;                                        // add one more row to convolve for next run
     }
 
     // convolve rows from index=kCenterY to index=(dataSizeY-kCenterY-1)
-    for (i = kernelCenterY; i < rowEnd; ++i)  // number of rows
+    for (i = kCenterY; i < rowEnd; ++i)               // number of rows
     {
         // partition #4 ***********************************
-        x = kernelCenterX;
-        for (j = 0; j < kernelCenterX; ++j)  // column from index=0 to index=kCenterX-1
+        x = kCenterX;
+        for (j = 0; j < kCenterX; ++j)                 // column from index=0 to index=kCenterX-1
         {
             sum = 0;
             t = 0;
-            for (m = 0; m < this->_kernelHeight; ++m)
+            for (m = 0; m < kernelSizeY; ++m)
             {
                 for (n = 0; n <= x; ++n)
                 {
-                    sum += *inPtr[t] * this->_kernel[t];
+                    sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
-                t += (this->_kernelWidth - x - 1);
+                t += (kernelSizeX - x - 1);
             }
 
             // store output
-            *outPtr = (unsigned char)((float)fabs(sum) + 0.5f);
+            *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kernelSize; ++k)
-                ++inPtr[k];  // move all cursors to next
+            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
         }
 
         // partition #5 ***********************************
-        for (j = kernelCenterX; j < colEnd; ++j)  // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
+        for (j = kCenterX; j < colEnd; ++j)          // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
         {
             sum = 0;
             t = 0;
-            for (m = 0; m < this->_kernelHeight; ++m)
+            for (m = 0; m < kernelSizeY; ++m)
             {
-                for (n = 0; n < this->_kernelWidth; ++n)
+                for (n = 0; n < kernelSizeX; ++n)
                 {
-                    sum += *inPtr[t] * this->_kernel[t];
-                    ++inPtr[t];  // in this partition, all cursors are used to convolve. moving cursors to next is safe
-                                 // here
+                    sum += *inPtr[t] * (this->_kernel[t]);
+                    ++inPtr[t]; // in this partition, all cursors are used to convolve. moving cursors to next is safe here
                     ++t;
                 }
             }
 
             // store output
-            *outPtr = (unsigned char)((float)fabs(sum) + 0.5f);
+            *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
         }
 
         // partition #6 ***********************************
         x = 1;
-        for (j = colEnd; j < dataSizeX; ++j)  // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
+        for (j = colEnd; j < dataSizeX; ++j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
         {
             sum = 0;
             t = x;
-            for (m = 0; m < this->_kernelHeight; ++m)
+            for (m = 0; m < kernelSizeY; ++m)
             {
-                for (n = x; n < this->_kernelWidth; ++n)
+                for (n = x; n < kernelSizeX; ++n)
                 {
-                    sum += *inPtr[t] * this->_kernel[t];
+                    sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
                 t += x;
             }
 
             // store output
-            *outPtr = (unsigned char)((float)fabs(sum) + 0.5f);
+            *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kernelSize; ++k)
-                ++inPtr[k];  // move all cursors to next
+            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
         }
     }
 
     // convolve rows from index=(dataSizeY-kCenterY) to index=(dataSizeY-1)
     y = 1;
-    for (i = rowEnd; i < dataSizeY; ++i)  // number of rows
+    for (i = rowEnd; i < dataSizeY; ++i)               // number of rows
     {
         // partition #7 ***********************************
-        x = kernelCenterX;
-        for (j = 0; j < kernelCenterX; ++j)  // column from index=0 to index=kCenterX-1
+        x = kCenterX;
+        for (j = 0; j < kCenterX; ++j)                 // column from index=0 to index=kCenterX-1
         {
             sum = 0;
-            t = this->_kernelWidth * y;
+            t = kernelSizeX * y;
 
-            for (m = y; m < this->_kernelHeight; ++m)
+            for (m = y; m < kernelSizeY; ++m)
             {
                 for (n = 0; n <= x; ++n)
                 {
-                    sum += *inPtr[t] * this->_kernel[t];
+                    sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
-                t += (this->_kernelWidth - x - 1);
+                t += (kernelSizeX - x - 1);
             }
 
             // store output
-            *outPtr = (unsigned char)((float)fabs(sum) + 0.5f);
+            *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kernelSize; ++k)
-                ++inPtr[k];  // move all cursors to next
+            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
         }
 
         // partition #8 ***********************************
-        for (j = kernelCenterX; j < colEnd; ++j)  // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
+        for (j = kCenterX; j < colEnd; ++j)            // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
         {
             sum = 0;
-            t = this->_kernelWidth * y;
-            for (m = y; m < this->_kernelHeight; ++m)
+            t = kernelSizeX * y;
+            for (m = y; m < kernelSizeY; ++m)
             {
-                for (n = 0; n < this->_kernelWidth; ++n)
+                for (n = 0; n < kernelSizeX; ++n)
                 {
-                    sum += *inPtr[t] * this->_kernel[t];
+                    sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
             }
 
             // store output
-            *outPtr = (unsigned char)((float)fabs(sum) + 0.5f);
+            *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kernelSize; ++k)
-                ++inPtr[k];
+            for (k = 0; k < kSize; ++k) ++inPtr[k];
         }
 
         // partition #9 ***********************************
         x = 1;
-        for (j = colEnd; j < dataSizeX; ++j)  // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
+        for (j = colEnd; j < dataSizeX; ++j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
         {
             sum = 0;
-            t = this->_kernelWidth * y + x;
-            for (m = y; m < this->_kernelHeight; ++m)
+            t = kernelSizeX * y + x;
+            for (m = y; m < kernelSizeY; ++m)
             {
-                for (n = x; n < this->_kernelWidth; ++n)
+                for (n = x; n < kernelSizeX; ++n)
                 {
-                    sum += *inPtr[t] * this->_kernel[t];
+                    sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
                 t += x;
             }
 
             // store output
-            *outPtr = (unsigned char)((float)fabs(sum) + 0.5f);
+            *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kernelSize; ++k)
-                ++inPtr[k];  // move all cursors to next
+            for (k = 0; k < kSize; ++k) { 
+                ++(inPtr[k]); 
+            }    // move all cursors to next
         }
-        ++y;  // the starting row index is increased
-    }
 
-    for (int i = 0; i < destinationImage.rows; i++) {
-        float* dataRow = destinationImage.ptr<float>(i);
-        for (int j = 0; j < destinationImage.cols; j++) {
-            dataRow[j] /= 255.0;
-        }
+        ++y;                                        // the starting row index is increased
     }
-
     return 0;
 }
-
-
 
 
 Convolution::Convolution()

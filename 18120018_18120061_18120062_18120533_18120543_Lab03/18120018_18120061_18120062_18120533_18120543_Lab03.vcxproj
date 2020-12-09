@@ -163,6 +163,7 @@
     <ClCompile Include="src\Converter.cpp" />
     <ClCompile Include="src\Convolution.cpp" />
     <ClCompile Include="src\EdgeDetector.cpp" />
+    <ClCompile Include="src\Kernel.cpp" />
     <ClCompile Include="src\Main.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -171,6 +172,7 @@
     <ClInclude Include="src\Convolution.h" />
     <ClInclude Include="src\CV_Include.h" />
     <ClInclude Include="src\EdgeDetector.h" />
+    <ClInclude Include="src\Kernel.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

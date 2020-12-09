@@ -3,6 +3,7 @@
 #include "EdgeDetector.h"
 #include "Blur.h"
 #include "Converter.h"
+#include "Kernel.h"
 
 static int __str_cmp__(const char* string_1, const char* string_2)
 {
@@ -28,7 +29,7 @@ int main(int argc, char* argv[]) {
 
 	// Put your test code here
 	// define 5x5 Gaussian kernel
-	float kernel[25] = { 1 / 256.0f,  4 / 256.0f,  6 / 256.0f,  4 / 256.0f, 1 / 256.0f,
+	std::vector<float> kernel = { 1 / 256.0f,  4 / 256.0f,  6 / 256.0f,  4 / 256.0f, 1 / 256.0f,
 						 4 / 256.0f, 16 / 256.0f, 24 / 256.0f, 16 / 256.0f, 4 / 256.0f,
 						 6 / 256.0f, 24 / 256.0f, 36 / 256.0f, 24 / 256.0f, 6 / 256.0f,
 						 4 / 256.0f, 16 / 256.0f, 24 / 256.0f, 16 / 256.0f, 4 / 256.0f,
@@ -67,13 +68,15 @@ int main(int argc, char* argv[]) {
 		0.0023129794f,0.0011314391f,0.00052009715f,0.00022466264f,
 	};
 	Convolution convolution;
+	convolution.SetKernel(getGaussianKernel(5,5,1,2), 5,5);
+	displayKernel(getGaussianKernel(5, 5, 1, 2));
 	Converter converter;
 	cv::Mat inputImage = cv::imread("E:/lena.jpg", cv::IMREAD_ANYCOLOR);
 	cv::Mat inputImage2gray = cv::Mat(inputImage.cols, inputImage.rows, CV_8UC1, cv::Scalar(0));
 	// converter.Convert(inputImage, inputImage2gray, 1);
 	cv::Mat outputImage;
 	cv::cvtColor(inputImage, inputImage2gray, cv::COLOR_BGR2GRAY);
-	outputImage = cv::Mat(inputImage2gray.cols, inputImage2gray.rows, CV_8UC1, cv::Scalar(0));
+	outputImage = inputImage2gray.clone();
 	// blur.BlurImage(inputImage2gray, outputImage, 5, 5, 0);
 	convolution.DoConvolution(inputImage2gray, outputImage);
 	// convolve2DFast(inputImage2gray.data, outputImage.data, inputImage2gray.cols, inputImage2gray.rows, gaussian_1, 3, 3);
