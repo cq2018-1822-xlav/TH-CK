@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
 	};
 	Convolution convolution;
 	convolution.SetKernel(getGaussianKernel(5,5,1,2), 5,5);
-	displayKernel(getGaussianKernel(5, 5, 1, 2));
+	// displayKernel(getGaussianKernel(5, 5, 1, 2));
 	Converter converter;
 	cv::Mat inputImage = cv::imread("E:/lena.jpg", cv::IMREAD_ANYCOLOR);
 	cv::Mat inputImage2gray = cv::Mat(inputImage.cols, inputImage.rows, CV_8UC1, cv::Scalar(0));
@@ -77,8 +77,9 @@ int main(int argc, char* argv[]) {
 	cv::Mat outputImage;
 	cv::cvtColor(inputImage, inputImage2gray, cv::COLOR_BGR2GRAY);
 	outputImage = inputImage2gray.clone();
-	// blur.BlurImage(inputImage2gray, outputImage, 5, 5, 0);
-	convolution.DoConvolution(inputImage2gray, outputImage);
+	blur.BlurImage(inputImage2gray, outputImage, 5, 5, 1); 
+	displayKernel(getPrewittKernelX());
+	//convolution.DoConvolution(inputImage2gray, outputImage);
 	// convolve2DFast(inputImage2gray.data, outputImage.data, inputImage2gray.cols, inputImage2gray.rows, gaussian_1, 3, 3);
 	cv::namedWindow("Origin image", cv::WINDOW_AUTOSIZE);
 	cv::imshow("Origin image", inputImage);
