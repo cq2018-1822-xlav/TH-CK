@@ -72,9 +72,9 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
 
     // set initial position of multi-cursor, NOTE: it is swapped instead of kernel
     ptr = ptrSourceData + ((long long)dataSizeX * kCenterY + kCenterX); // the first cursor is shifted (kCenterX, kCenterY)
-    for (m = 0, t = 0; m < kernelSizeY; ++m)
+    for (m = 0, t = 0; m < kernelSizeY; m = -~m)
     {
-        for (n = 0; n < kernelSizeX; ++n, ++t)
+        for (n = 0; n < kernelSizeX; n = -~n, t = -~t)
         {
             inPtr[t] = ptr - n;
         }
@@ -89,17 +89,17 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
 
     // convolve rows from index=0 to index=kCenterY-1
     y = kCenterY;
-    for (i = 0; i < kCenterY; ++i)
+    for (i = 0; i < kCenterY; i = -~i)
     {
         // partition #1 ***********************************
         x = kCenterX;
-        for (j = 0; j < kCenterX; ++j)                 // column from index=0 to index=kCenterX-1
+        for (j = 0; j < kCenterX; j = -~j)                // column from index=0 to index=kCenterX-1
         {
             sum = 0;
             t = 0;
-            for (m = 0; m <= y; ++m)
+            for (m = 0; m <= y; m = -~m)
             {
-                for (n = 0; n <= x; ++n)
+                for (n = 0; n <= x; n = -~n)
                 {
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
@@ -111,17 +111,17 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
         }
 
         // partition #2 ***********************************
-        for (j = kCenterX; j < colEnd; ++j)            // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
+        for (j = kCenterX; j < colEnd; j=-~j)            // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
         {
             sum = 0;
             t = 0;
-            for (m = 0; m <= y; ++m)
+            for (m = 0; m <= y; m = -~m)
             {
-                for (n = 0; n < kernelSizeX; ++n)
+                for (n = 0; n < kernelSizeX; n = -~n)
                 {
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
@@ -132,18 +132,18 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
         }
 
         // partition #3 ***********************************
         x = 1;
-        for (j = colEnd; j < dataSizeX; ++j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
+        for (j = colEnd; j < dataSizeX; j = -~j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
         {
             sum = 0;
             t = x;
-            for (m = 0; m <= y; ++m)
+            for (m = 0; m <= y; m = -~m)
             {
-                for (n = x; n < kernelSizeX; ++n)
+                for (n = x; n < kernelSizeX; n = -~n)
                 {
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
@@ -155,24 +155,24 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
         }
 
         ++y;                                        // add one more row to convolve for next run
     }
 
     // convolve rows from index=kCenterY to index=(dataSizeY-kCenterY-1)
-    for (i = kCenterY; i < rowEnd; ++i)               // number of rows
+    for (i = kCenterY; i < rowEnd; i = -~i)               // number of rows
     {
         // partition #4 ***********************************
         x = kCenterX;
-        for (j = 0; j < kCenterX; ++j)                 // column from index=0 to index=kCenterX-1
+        for (j = 0; j < kCenterX; j = -~j)                // column from index=0 to index=kCenterX-1
         {
             sum = 0;
             t = 0;
-            for (m = 0; m < kernelSizeY; ++m)
+            for (m = 0; m < kernelSizeY; m = -~m)
             {
-                for (n = 0; n <= x; ++n)
+                for (n = 0; n <= x; n = -~n)
                 {
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
@@ -184,17 +184,17 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
         }
 
         // partition #5 ***********************************
-        for (j = kCenterX; j < colEnd; ++j)          // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
+        for (j = kCenterX; j < colEnd; j = -~j)          // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
         {
             sum = 0;
             t = 0;
-            for (m = 0; m < kernelSizeY; ++m)
+            for (m = 0; m < kernelSizeY; m = -~m)
             {
-                for (n = 0; n < kernelSizeX; ++n)
+                for (n = 0; n < kernelSizeX; n = -~n)
                 {
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++inPtr[t]; // in this partition, all cursors are used to convolve. moving cursors to next is safe here
@@ -210,13 +210,13 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
 
         // partition #6 ***********************************
         x = 1;
-        for (j = colEnd; j < dataSizeX; ++j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
+        for (j = colEnd; j < dataSizeX; j = -~j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
         {
             sum = 0;
             t = x;
-            for (m = 0; m < kernelSizeY; ++m)
+            for (m = 0; m < kernelSizeY; m = -~m)
             {
-                for (n = x; n < kernelSizeX; ++n)
+                for (n = x; n < kernelSizeX; n = -~n)
                 {
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
@@ -228,22 +228,22 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
         }
     }
 
     // convolve rows from index=(dataSizeY-kCenterY) to index=(dataSizeY-1)
     y = 1;
-    for (i = rowEnd; i < dataSizeY; ++i)               // number of rows
+    for (i = rowEnd; i < dataSizeY; i = -~i)              // number of rows
     {
         // partition #7 ***********************************
         x = kCenterX;
-        for (j = 0; j < kCenterX; ++j)                 // column from index=0 to index=kCenterX-1
+        for (j = 0; j < kCenterX; j = -~j)                 // column from index=0 to index=kCenterX-1
         {
             sum = 0;
             t = kernelSizeX * y;
 
-            for (m = y; m < kernelSizeY; ++m)
+            for (m = y; m < kernelSizeY; m = -~m)
             {
                 for (n = 0; n <= x; ++n)
                 {
@@ -257,17 +257,17 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; ++k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
         }
 
         // partition #8 ***********************************
-        for (j = kCenterX; j < colEnd; ++j)            // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
+        for (j = kCenterX; j < colEnd; j = -~j)            // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
         {
             sum = 0;
             t = kernelSizeX * y;
-            for (m = y; m < kernelSizeY; ++m)
+            for (m = y; m < kernelSizeY; m = -~m)
             {
-                for (n = 0; n < kernelSizeX; ++n)
+                for (n = 0; n < kernelSizeX; n = -~n)
                 {
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
@@ -278,18 +278,18 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; ++k) ++inPtr[k];
+            for (k = 0; k < kSize; k = -~k) ++inPtr[k];
         }
 
         // partition #9 ***********************************
         x = 1;
-        for (j = colEnd; j < dataSizeX; ++j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
+        for (j = colEnd; j < dataSizeX; j = -~j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
         {
             sum = 0;
             t = kernelSizeX * y + x;
-            for (m = y; m < kernelSizeY; ++m)
+            for (m = y; m < kernelSizeY; m = -~m)
             {
-                for (n = x; n < kernelSizeX; ++n)
+                for (n = x; n < kernelSizeX; n = -~n)
                 {
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
@@ -301,7 +301,7 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; ++k) { 
+            for (k = 0; k < kSize; k = -~k) {
                 ++(inPtr[k]); 
             }    // move all cursors to next
         }
