@@ -8,5 +8,14 @@ const int DEFAULT_SIGMA_Y = 2;
 
 void displayKernel(const std::vector<float>& v);
 std::vector<float> getGaussianKernel(int rows, int cols, double sigmax, double sigmay);
+std::vector<float> getMeansKernel(int rows, int cols);
+
+std::vector<float> getSobelKernelX();
+std::vector<float> getSobelKernelY();
+
+std::vector<float> getPrewittKernelX();
+std::vector<float> getPrewittKernelY();
+
+std::vector<float> getLaplaceKernel();
 
 #endif // KERNEL_H

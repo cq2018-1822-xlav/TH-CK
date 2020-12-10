@@ -45,3 +45,55 @@ std::vector<float> getGaussianKernel(int rows, int cols, double sigmax, double s
     }
     return result;
 }
+
+std::vector<float> getMeansKernel(int rows, int cols)
+{
+    std::vector<float> result;
+    int sizeOfKernel = rows * cols;
+    for (auto i = 0; i < sizeOfKernel; ++i) {
+        result.push_back(1.0 / sizeOfKernel);
+    }
+    return result;
+}
+
+std::vector<float> getSobelKernelX()
+{
+    std::vector <float> sobelX = { -1.0 , 0.0, 1.0, -2.0, 0.0, 2.0, -1.0, 0.0, 1.0 };
+    for (int i = 0; i < sobelX.size(); i++) {
+        sobelX[i] *= 1.0 / 4;
+    }
+    return sobelX;
+}
+
+std::vector<float> getSobelKernelY()
+{
+    std::vector <float> sobelX = { -1.0, -2.0, -1.0, 0.0, 0.0, 0.0, 1.0, 2.0, 1.0 };
+    for (int i = 0; i < sobelX.size(); i++) {
+        sobelX[i] *= 1.0 / 4;
+    }
+    return sobelX;
+}
+
+std::vector<float> getPrewittKernelX()
+{
+    std::vector <float> prewittX = { 1.0, 0.0, -1.0, 1.0, 0, -1.0, 1.0, 0, -1.0 };
+    for (int i = 0; i < prewittX.size(); i++) {
+        prewittX[i] *= 1.0 / 3;
+    }
+    return prewittX;
+}
+
+std::vector<float> getPrewittKernelY()
+{
+    std::vector <float> prewittY = { -1.0, -1.0, -1.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0 };
+    for (int i = 0; i < prewittY.size(); i++) {
+        prewittY[i] *= 1.0 / 3;
+    }
+    return prewittY;
+}
+
+std::vector<float> getLaplaceKernel()
+{
+    std::vector<float> laplace = { 1.0, 1.0, 1.0, 1.0, -8.0, 1.0, 1.0, 1.0, 1.0 };
+    return laplace;
+}
