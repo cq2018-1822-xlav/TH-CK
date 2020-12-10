@@ -23,12 +23,12 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 	}
 
 	if (kWidth < 0) {
-		std::cout << "[EXCEPTION] fuck\n";
+		std::cout << "[EXCEPTION] kWidth negative.\n";
 		return 1;
 	}
 
 	if (kHeight < 0) {
-		std::cout << "[EXCEPTION] you\n";
+		std::cout << "[EXCEPTION] kHeigh negative.\n";
 		return 1;
 	}
 
@@ -41,8 +41,11 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 	// Số channels của ảnh source
 	int sourceImageChannels = sourceImage.channels();
 
+	// Widthstep của ảnh source
+	size_t sourceWidthStep = sourceImage.step[0];
+
 	if (sourceImageChannels != 1) {
-		std::cout << "[EXCEPTION] dumaaaa may\n";
+		std::cout << "[EXCEPTION] Error occurs with source image channels.\n";
 		return 1;
 	}
 
@@ -76,8 +79,39 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 	case 1: // Lọc Trung Vị
 	{
 		std::cout << "Blur method starting: Median\n";
-		Convolution convolution;
 
+		destinationImage = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
+
+		std::cout << "Calculating kernel center...\n";
+		int kernelCenterWidth = kWidth >> 1;
+		int kernelCenterHeight = kHeight >> 1;
+
+		std::vector<int> offsets;
+		for (int y = -kernelCenterHeight; y <= kernelCenterHeight; y++)
+		{
+			for (int x = -kernelCenterWidth; x <= kernelCenterWidth; x++)
+			{
+				offsets.push_back(y * sourceWidthStep + x);
+			}
+		}
+
+		uchar* p = (uchar*)sourceImage.data;
+
+		for (int i = 0; i < destinationImage.rows; i++) {
+			uchar* dataRow = destinationImage.ptr<uchar>(i);
+			for (int j = 0; j < destinationImage.cols; j++) {
+				int i_source = i + (kWidth / 2), j_source = j + (kHeight / 2);
+				uchar* pSource = p + ((long long)i_source * sourceWidthStep + (long long)j_source * sourceImageChannels);
+			
+				std::vector<uchar> value;
+				for (int k = 0; k < offsets.size(); k++) {
+					value.push_back(pSource[offsets[k]]);
+				}
+		
+				sort(value.begin(), value.begin() + value.size());
+				dataRow[j] = cv::saturate_cast<uchar>(value[value.size() / 2 + 1]);
+			}
+		}
 		break;
 	}
 	case 2: // Lọc Gauss
