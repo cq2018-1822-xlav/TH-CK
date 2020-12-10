@@ -49,6 +49,8 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 		return 1;
 	}
 
+	destinationImage = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
+
 	// Switch method
 	switch (method)
 	{
@@ -65,8 +67,6 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 		for (int i = 0; i < sizeKernel; i++) {
 			mean_kernel.push_back(1.0 / sizeKernel);
 		}
-
-		//destinationImage = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
 
 		std::cout << "Set kernel...\n";
 		convolution.SetKernel(mean_kernel, kWidth, kHeight);
