@@ -107,8 +107,8 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 		std::cout << "Starting convolution with Prewitt kernel X ...\n";
 		convolutionPrewittX.DoConvolution(sourceImage, gPrewittX);
 
-		cv::namedWindow("Sobel X", cv::WINDOW_AUTOSIZE);
-		cv::imshow("Sobel X", gPrewittX);
+		cv::namedWindow("Prewitt X", cv::WINDOW_AUTOSIZE);
+		cv::imshow(" Prewitt X", gPrewittX);
 
 		convolutionPrewittY.DoConvolution(sourceImage, gPrewittY);
 

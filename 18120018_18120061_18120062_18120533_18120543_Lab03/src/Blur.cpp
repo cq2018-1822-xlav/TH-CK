@@ -44,17 +44,17 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 	// Widthstep của ảnh source
 	size_t sourceWidthStep = sourceImage.step[0];
 
+
 	if (sourceImageChannels != 1) {
-		std::cout << "[EXCEPTION] Error occurs with source image channels.\n";
-		return 1;
+		// std::cout << "[EXCEPTION] Error occurs with source image channels.\n"
 	}
 
 	destinationImage = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
 
 	// Switch method
-	switch (method)
-	{
-		std::cout << "[LOG] Switching methods\n";
+	switch (method) {
+		{
+			std::cout << "[LOG] Switching methods\n";
 	case 0: // Lọc Trung Bình
 	{
 		std::cout << "Blur method starting: Means\n";
@@ -73,7 +73,7 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 		std::cout << "Starting convolution...\n";
 		convolution.DoConvolution(sourceImage, destinationImage);
 		std::cout << "End convolution...\n";
-		
+
 		break;
 	}
 	case 1: // Lọc Trung Vị
@@ -102,12 +102,12 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 			for (int j = 0; j < destinationImage.cols; j++) {
 				int i_source = i + (kWidth / 2), j_source = j + (kHeight / 2);
 				uchar* pSource = p + ((long long)i_source * sourceWidthStep + (long long)j_source * sourceImageChannels);
-			
+
 				std::vector<uchar> value;
 				for (int k = 0; k < offsets.size(); k++) {
 					value.push_back(pSource[offsets[k]]);
 				}
-		
+
 				sort(value.begin(), value.begin() + value.size());
 				dataRow[j] = cv::saturate_cast<uchar>(value[value.size() / 2 + 1]);
 			}
@@ -134,6 +134,7 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 		return 1;
 	}
 	return 0;
+}
 }
 
 Blur::Blur() {

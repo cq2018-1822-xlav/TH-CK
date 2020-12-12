@@ -9,6 +9,17 @@ class Convolution
 	int _kernelWidth;//chiều rộng kernel
 	int _kernelHeight;//chiều dài kernel
 public:
+	// Hàm cắt image thành mảng màu đơn
+	// 	 	sourceImage: ảnh input
+	//		destinationImage : ảnh output
+	//		channel: là channel được chọn để cắt
+	//		0: blue
+	//		1: green
+	//		2: red
+	int separateColorImg(const cv::Mat& sourceImage, cv::Mat& destinationImage, int channel);
+
+	int mergeColorImg(cv::Mat& sourceImage, cv::Mat& blueLayer, cv::Mat& greenLayer, cv::Mat& redLayer);
+public:
 	//trả về kernel 
 	std::vector<float> GetKernel();
 	//set kernel, chiều rộng, chiều dài kernel phải là số lẻ
@@ -23,6 +34,16 @@ public:
 	1: nếu tính thất bại (không đọc được ảnh input,...)
 	*/
 	int DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationImage);
+
+	/*
+	Hàm tính convolution của 1 ảnh màu với kernel được xác định trước
+	sourceImage: ảnh input
+	destinationImage: ảnh output
+	Hàm trả về
+	0: nếu tính thành công
+	1: nếu tính thất bại (không đọc được ảnh input,...)
+	*/
+	int DoConvolutionColor(const cv::Mat& sourceImage, cv::Mat& destinationImage);
 	Convolution();
 	~Convolution();
 };

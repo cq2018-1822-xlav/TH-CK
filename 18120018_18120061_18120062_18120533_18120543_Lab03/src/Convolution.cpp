@@ -1,5 +1,176 @@
 ﻿#include "Convolution.h"
 
+int Convolution::separateColorImg(const cv::Mat& sourceImage, cv::Mat& destinationImage, int channel)
+{
+    // Kiểm trả ảnh đầu vào
+    if (!sourceImage.data) {
+        // Chuyển đổi ảnh thất bại: in ra màn hình console tin nhắn
+        std::cout << "[EXCEPTION] Error with input image.\n";
+        return 1; // Trả về 1
+    }
+
+    // Chiều rộng của ảnh source
+    int width = sourceImage.cols;
+
+    // Chiều cao của ảnh source
+    int heigth = sourceImage.rows;
+
+    // Số channels của ảnh source
+    int sourceChannels = sourceImage.channels();
+
+    // Khởi tạo ảnh destination là ảnh grayscale với thông số height, width
+    destinationImage = cv::Mat(heigth, width, CV_8UC1, cv::Scalar(0));
+
+    // Số channels của ảnh destination
+    int destinationChannels = destinationImage.channels();
+
+    // Widthstep của ảnh source
+    size_t sourceWidthStep = sourceImage.step[0];
+
+    // Widthstep của ảnh destination
+    size_t destinationWidthStep = destinationImage.step[0];
+
+    // Con trỏ quản lý vùng nhớ data ảnh source
+    uchar* ptrSourceData = sourceImage.data;
+
+    // Con trỏ quản lý vùng nhớ data ảnh destination
+    uchar* ptrDestinationData = destinationImage.data;
+
+    for (int y = 0; y < heigth; y++, ptrSourceData += sourceWidthStep, ptrDestinationData += destinationWidthStep) {
+        uchar* ptrSourceRow = ptrSourceData;
+        uchar* ptrDestinationRow = ptrDestinationData;
+
+        for (int x = 0; x < width; x++, ptrSourceRow += sourceChannels, ptrDestinationRow += destinationChannels) {
+
+
+            switch (channel) {
+            case 0: {
+                // Lấy giá trị kênh màu Blue của ảnh source
+                uchar blue = ptrSourceRow[0];
+                // Gán giá trị độ xám vừa tính được vào kênh vào của ảnh destination
+                ptrDestinationRow[0] = blue;
+
+                // std::cout << (int)blue << "\n";
+
+                break;
+            }
+
+            case 1:
+            {
+                // Lấy giá trị kênh màu Blue của ảnh source
+                uchar green = ptrSourceRow[1];
+                // Gán giá trị độ xám vừa tính được vào kênh vào của ảnh destination
+                ptrDestinationRow[0] = green;
+
+                // std::cout << (int)green << "\n";
+
+                break;
+            }
+
+            case 2:
+            {
+                // Lấy giá trị kênh màu Red của ảnh source
+                uchar red = ptrSourceRow[2];
+                ptrDestinationRow[0] = red;
+
+                // std::cout << (int)red << "\n";
+
+                break;
+            }
+
+            default:
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
+int Convolution::mergeColorImg(cv::Mat& sourceImage, cv::Mat& blueLayer, cv::Mat& greenLayer, cv::Mat& redLayer)
+{
+    // Kiểm trả ảnh đầu vào
+    if (!blueLayer.data || !greenLayer.data || !redLayer.data) {
+        // Chuyển đổi ảnh thất bại: in ra màn hình console tin nhắn
+        std::cout << "[EXCEPTION] Error with input image.\n";
+        return 1; // Trả về 1
+    }
+
+    if ((blueLayer.rows != greenLayer.rows) || (blueLayer.rows != redLayer.rows)) {
+        std::cout << "[EXCEPTION] Error with input image.\n";
+    }
+
+    if ((blueLayer.cols != greenLayer.cols) || (blueLayer.cols  != redLayer.cols)) {
+        std::cout << "[EXCEPTION] Error with input image.\n";
+    }
+
+    sourceImage = cv::Mat(blueLayer.rows, blueLayer.cols, CV_8UC3, cv::Scalar(0));
+
+    // Chiều rộng của ảnh source
+    int width = sourceImage.cols;
+
+    // Chiều cao của ảnh source
+    int heigth = sourceImage.rows;
+
+    // Số channels của ảnh source
+    int sourceChannels = sourceImage.channels();
+
+    // Widthstep của ảnh source
+    size_t sourceWidthStep = sourceImage.step[0];
+
+    // Con trỏ quản lý vùng nhớ data ảnh source
+    uchar* ptrSourceData = sourceImage.data;
+
+    // Số channels của ảnh blue
+    int blueLayerChannels = blueLayer.channels();
+
+    // Widthstep của ảnh blue
+    size_t blueLayerWidthStep = blueLayer.step[0];
+
+    // Con trỏ quản lý vùng nhớ data ảnh blue
+    uchar* ptrBlueLayerData = blueLayer.data;
+
+    // Số channels của ảnh green
+    int greenLayerChannels = greenLayer.channels();
+
+    // Widthstep của ảnh green
+    size_t greenLayerWidthStep = greenLayer.step[0];
+
+    // Con trỏ quản lý vùng nhớ data ảnh green
+    uchar* ptrGreenLayerData = greenLayer.data;
+
+    // Số channels của ảnh green
+    int redLayerChannels = redLayer.channels();
+
+    // Widthstep của ảnh green
+    size_t redLayerWidthStep = redLayer.step[0];
+
+    // Con trỏ quản lý vùng nhớ data ảnh green
+    uchar* ptrRedLayerData = redLayer.data;
+
+
+    for (int y = 0; y < heigth; y++, ptrSourceData += sourceWidthStep, ptrBlueLayerData += blueLayerWidthStep,
+            ptrGreenLayerData += greenLayerWidthStep,
+                     ptrRedLayerData += redLayerWidthStep) {
+        uchar* ptrSourceRow = ptrSourceData;
+        uchar* ptrBlueLayerRow = ptrBlueLayerData;
+        uchar* ptrGreenLayerRow = ptrGreenLayerData;
+        uchar* ptrRedLayerRow = ptrRedLayerData;
+
+        for (int x = 0; x < width; x++, ptrSourceRow += sourceChannels, ptrBlueLayerRow += blueLayerChannels
+            , ptrGreenLayerRow += greenLayerChannels, ptrRedLayerRow += redLayerChannels) {
+            uchar blue = ptrBlueLayerRow[0];
+            uchar green = ptrGreenLayerRow[0];
+            uchar red = ptrRedLayerRow[0];
+
+            ptrSourceRow[0] = blue;
+            ptrSourceRow[1] = green;
+            ptrSourceRow[2] = red;
+        }
+    }
+
+    return 0;
+}
+
 std::vector<float> Convolution::GetKernel()
 {
     return this->_kernel;
@@ -308,9 +479,35 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
 
         ++y;                                        // the starting row index is increased
     }
+
     return 0;
 }
 
+
+int Convolution::DoConvolutionColor(const cv::Mat& sourceImage, cv::Mat& destinationImage)
+{
+    destinationImage = cv::Mat(sourceImage.rows, sourceImage.cols, CV_8UC3, cv::Scalar(0));
+    cv::Mat blueLayer = cv::Mat(sourceImage.rows, sourceImage.cols, CV_8UC1, cv::Scalar(0));
+    cv::Mat greenLayer = cv::Mat(sourceImage.rows, sourceImage.cols, CV_8UC1, cv::Scalar(0));
+    cv::Mat redLayer = cv::Mat(sourceImage.rows, sourceImage.cols, CV_8UC1, cv::Scalar(0));
+
+    this->separateColorImg(sourceImage, blueLayer, 0);
+    this->separateColorImg(sourceImage, greenLayer, 1);
+    this->separateColorImg(sourceImage, redLayer, 2);
+
+    cv::Mat blueLayerConvole = blueLayer.clone();
+    cv::Mat greenLayerConvole = greenLayer.clone();
+    cv::Mat redLayerConvole = redLayer.clone();
+
+    int res = this->DoConvolution(blueLayer, blueLayerConvole);
+    //this->DoConvolution(greenLayer, greenLayerConvole);
+    //this->DoConvolution(redLayer, redLayerConvole);
+
+    std::cout << res << "\n";
+
+    // this->mergeColorImg(destinationImage, blueLayerConvole, greenLayerConvole, redLayerConvole);
+    return 0;
+}
 
 Convolution::Convolution()
 {
