@@ -18,7 +18,14 @@ public:
 	//		2: red
 	int separateColorImg(const cv::Mat& sourceImage, cv::Mat& destinationImage, int channel);
 
+
+	// Hàm gộp image từ các ma trận màu đơn blue, green red
+	// 	 	sourceImage: ảnh input
+	//		blueLayer : ma trận màu blue
+	//		greenLayer: ma trận màu green
+	//		redLayer: ma trận màu rd
 	int mergeColorImg(cv::Mat& sourceImage, cv::Mat& blueLayer, cv::Mat& greenLayer, cv::Mat& redLayer);
+
 public:
 	//trả về kernel 
 	std::vector<float> GetKernel();

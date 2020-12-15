@@ -486,29 +486,49 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
 
 int Convolution::DoConvolutionColor(const cv::Mat& sourceImage, cv::Mat& destinationImage)
 {
+    // Khởi tạo ảnh nguồn là ảnh 3 kênh màu với chiều cao (Height) = chiều cao ảnh nguồn  (sourceImage.rows), chiều rộng (width) = chiều rộng ảnh nguồn (sourceImage.cols)
     destinationImage = cv::Mat(sourceImage.rows, sourceImage.cols, CV_8UC3, cv::Scalar(0));
+
+    // Khởi tạo Blue Layer là ma trận chứa giá trị kênh màu blue
+    // Chiều cao (Height) = chiều cao ảnh nguồn  (sourceImage.rows), chiều rộng (width) = chiều rộng ảnh nguồn (sourceImage.cols)
     cv::Mat blueLayer = cv::Mat(sourceImage.rows, sourceImage.cols, CV_8UC1, cv::Scalar(0));
+
+    // Khởi tạo Green Layer là ma trận chứa giá trị kênh màu blue
+    // Chiều cao (Height) = chiều cao ảnh nguồn  (sourceImage.rows), chiều rộng (width) = chiều rộng ảnh nguồn (sourceImage.cols)
     cv::Mat greenLayer = cv::Mat(sourceImage.rows, sourceImage.cols, CV_8UC1, cv::Scalar(0));
+
+    // Khởi tạo Red Layer là ma trận chứa giá trị kênh màu blue
+   // Chiều cao (Height) = chiều cao ảnh nguồn  (sourceImage.rows), chiều rộng (width) = chiều rộng ảnh nguồn (sourceImage.cols)
     cv::Mat redLayer = cv::Mat(sourceImage.rows, sourceImage.cols, CV_8UC1, cv::Scalar(0));
 
+    // Thao tác tách ảnh nguồn thành ba layer Blue, Green, Red
+    // Thao tác tách ảnh nguồn ra Blue Layer bằng cách gọi phương thức separateColorImg bới param type = 0
     this->separateColorImg(sourceImage, blueLayer, 0);
+
+    // Thao tác tách ảnh nguồn ra Green Layer bằng cách gọi phương thức separateColorImg bới param type = 1
     this->separateColorImg(sourceImage, greenLayer, 1);
+
+    // Thao tác tách ảnh nguồn ra Red Layer bằng cách gọi phương thức separateColorImg bới param type = 2
     this->separateColorImg(sourceImage, redLayer, 2);
 
+    // Khởi tạo các ma trận Destination convolution cho các Layer: Blue, Green, Red
     cv::Mat blueLayerConvole = blueLayer.clone();
     cv::Mat greenLayerConvole = greenLayer.clone();
     cv::Mat redLayerConvole = redLayer.clone();
 
-    int res = this->DoConvolution(blueLayer, blueLayerConvole);
-    //this->DoConvolution(greenLayer, greenLayerConvole);
-    //this->DoConvolution(redLayer, redLayerConvole);
+    // Thực thi Convolution 2D với từng layer bằng cách gọi phương thức DoConvolution với các param đúng theo pattern
+    this->DoConvolution(blueLayer, blueLayerConvole);
+    this->DoConvolution(greenLayer, greenLayerConvole);
+    this->DoConvolution(redLayer, redLayerConvole);
 
-    std::cout << res << "\n";
+    // Thực thi thao tác gộp các layer Blue, Green, Red sau khi Convole để kết xuất ảnh kết quả bằng cách gọi phương thức mergeColorImg  với các param đúng theo pattern
+    this->mergeColorImg(destinationImage, blueLayerConvole, greenLayerConvole, redLayerConvole);
 
-    // this->mergeColorImg(destinationImage, blueLayerConvole, greenLayerConvole, redLayerConvole);
+    // Trả về 0: Thành công
     return 0;
 }
 
+// Constructor cho lớp Convolution
 Convolution::Convolution()
 {
     this->_kernel = std::vector<float>(0, 0);
@@ -516,6 +536,7 @@ Convolution::Convolution()
     this->_kernelHeight = 0;
 }
 
+// Destructor cho lớp Convolution
 Convolution::~Convolution()
 {
     if (!this->_kernel.empty()) {
