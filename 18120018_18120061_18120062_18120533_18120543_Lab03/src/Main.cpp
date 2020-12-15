@@ -69,12 +69,12 @@ int main(int argc, char* argv[]) {
 	};
 	Convolution convolution;
 	convolution.SetKernel(getGaussianKernel(5,5,1,2), 5,5);
-	cv::Mat inputImage = cv::imread("E:/lena.jpg", cv::IMREAD_ANYCOLOR);
-	cv::Mat inputImage2gray;
-	cv::cvtColor(inputImage, inputImage2gray, cv::COLOR_BGR2GRAY);
-	cv::Mat  outputImage = cv::Mat(inputImage2gray.rows, inputImage2gray.cols, CV_8UC3, cv::Scalar(0));
-	convolution.DoConvolutionColor(inputImage, outputImage);
-
+	cv::Mat inputImage = cv::imread("E:/salt-and-pepper-noise-grayscale-2.png", cv::IMREAD_ANYCOLOR);
+	//cv::Mat inputImage2gray;
+	//cv::cvtColor(inputImage, inputImage2gray, cv::COLOR_BGR2GRAY);
+	cv::Mat  outputImage;
+	// convolution.DoConvolutionColor(inputImage, outputImage);
+	blur.BlurImage(inputImage, outputImage, 17, 17, 0);
 	cv::namedWindow("Origin image", cv::WINDOW_AUTOSIZE);
 	cv::imshow("Origin image", inputImage);
 	//cv::namedWindow("Gray image", cv::WINDOW_AUTOSIZE);

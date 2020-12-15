@@ -44,17 +44,33 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 	// Widthstep của ảnh source
 	size_t sourceWidthStep = sourceImage.step[0];
 
+	int mode = 0;
 
-	if (sourceImageChannels != 1) {
+
+	// Ảnh 1 kênh màu
+	if (sourceImageChannels == 1) {
 		// std::cout << "[EXCEPTION] Error occurs with source image channels.\n"
+		destinationImage = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
+		std::cout << "Gray\n";
+		mode = 1;
 	}
 
-	destinationImage = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
+	// Ảnh 3 kênh màu
+	else if (sourceImageChannels == 3) {
+		destinationImage = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC3, cv::Scalar(0));
+		std::cout << "Color\n";
+		mode = 3;
+	}
+
+	else {
+		std::cout << "[EXCEPTION] Error occurs with source image channels.\n";
+		return 1;
+	}
+
+	
 
 	// Switch method
 	switch (method) {
-		{
-			std::cout << "[LOG] Switching methods\n";
 	case 0: // Lọc Trung Bình
 	{
 		std::cout << "Blur method starting: Means\n";
@@ -71,47 +87,111 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 		std::cout << "Set kernel...\n";
 		convolution.SetKernel(mean_kernel, kWidth, kHeight);
 		std::cout << "Starting convolution...\n";
-		convolution.DoConvolution(sourceImage, destinationImage);
-		std::cout << "End convolution...\n";
-
+		if (mode == 1) {
+			convolution.DoConvolution(sourceImage, destinationImage);
+			std::cout << "End convolution...\n";
+		}
+		
+		if (mode == 3) {
+			convolution.DoConvolutionColor(sourceImage, destinationImage);
+			std::cout << "End convolution...\n";
+		}
 		break;
 	}
 	case 1: // Lọc Trung Vị
 	{
 		std::cout << "Blur method starting: Median\n";
 
-		destinationImage = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
-
-		std::cout << "Calculating kernel center...\n";
+		
 		int kernelCenterWidth = kWidth >> 1;
 		int kernelCenterHeight = kHeight >> 1;
 
-		std::vector<int> offsets;
-		for (int y = -kernelCenterHeight; y <= kernelCenterHeight; y++)
-		{
-			for (int x = -kernelCenterWidth; x <= kernelCenterWidth; x++)
-			{
-				offsets.push_back(y * sourceWidthStep + x);
-			}
-		}
+		
 
 		uchar* p = (uchar*)sourceImage.data;
 
-		for (int i = 0; i < destinationImage.rows; i++) {
-			uchar* dataRow = destinationImage.ptr<uchar>(i);
-			for (int j = 0; j < destinationImage.cols; j++) {
-				int i_source = i + (kWidth / 2), j_source = j + (kHeight / 2);
-				uchar* pSource = p + ((long long)i_source * sourceWidthStep + (long long)j_source * sourceImageChannels);
+		if (mode == 1) {
 
-				std::vector<uchar> value;
-				for (int k = 0; k < offsets.size(); k++) {
-					value.push_back(pSource[offsets[k]]);
+			std::vector<int> offsets;
+			std::cout << "Calculating kernel center...\n";
+			for (int y = -kernelCenterHeight; y <= kernelCenterHeight; y++)
+			{
+				for (int x = -kernelCenterWidth; x <= kernelCenterWidth; x++)
+				{
+					offsets.push_back(y* sourceWidthStep + x);
 				}
-
-				sort(value.begin(), value.begin() + value.size());
-				dataRow[j] = cv::saturate_cast<uchar>(value[value.size() / 2 + 1]);
 			}
+			std::cout << "Bluring...\n";
+			for (int i = 0; i < destinationImage.rows; i++) {
+				uchar* dataRow = destinationImage.ptr<uchar>(i);
+				for (int j = 0; j < destinationImage.cols; j++) {
+					int i_source = i + (kWidth / 2), j_source = j + (kHeight / 2);
+					uchar* pSource = p + ((long long)i_source * sourceWidthStep + (long long)j_source * sourceImageChannels);
+
+					std::vector<uchar> value;
+					for (int k = 0; k < offsets.size(); k++) {
+						value.push_back(pSource[offsets[k]]);
+					}
+
+					sort(value.begin(), value.begin() + value.size());
+					dataRow[j] = cv::saturate_cast<uchar>(value[value.size() / 2 + 1]);
+				}
+			}
+
+			std::cout << "Finished Bluring...\n";
 		}
+
+
+		if (mode == 3) {
+			std::cout << "Enable mode for color image...\n";
+			std::vector<std::vector<int>> offsets(sourceImageChannels);
+			std::cout << "Calculating kernel center...\n";
+			for (int y = -kernelCenterHeight; y <= kernelCenterHeight; y++)
+			{
+				for (int x = -kernelCenterWidth; x <= kernelCenterWidth; x++)
+				{
+
+					for (int channel = 0; channel < sourceImageChannels; channel++)
+					{
+						offsets[channel].push_back(y * sourceWidthStep + x * sourceImageChannels * channel);
+					}
+				}
+			}
+
+			
+			std::cout << "Bluring...\n";
+			uchar* pSrcData = sourceImage.data;
+			uchar* pDstData = destinationImage.data;
+
+			for (int y = 0; y < heigthSourceImage; y++, pDstData += destinationImage.step[0]) {
+				uchar* pDstRow = pDstData;
+
+				for (int x = 0; x < widthSourceImage; x++, pDstRow += destinationImage.channels()) {
+					int i_source = y + (kWidth / 2), j_source = x + (kHeight / 2);
+					uchar* pSource = pSrcData + ((long long)i_source * sourceWidthStep + (long long)j_source * sourceImageChannels);
+
+					std::vector<uchar> blue;
+					std::vector<uchar> green;
+					std::vector<uchar> red;
+
+
+					for (int k = 0; k < offsets.size(); k++) {
+						blue.push_back((pSource + offsets[0][k])[0]);
+						green.push_back((pSource + offsets[1][k])[1]);
+						red.push_back((pSource + offsets[2][k])[2]);
+					}
+
+					sort(blue.begin(), blue.begin() + blue.size());
+					sort(green.begin(), green.begin() + green.size());
+					sort(red.begin(), red.begin() + red.size());
+					pDstRow[0] = cv::saturate_cast<uchar>(blue[blue.size() / 2 + 1]);
+					pDstRow[1] = cv::saturate_cast<uchar>(green[green.size() / 2 + 1]);
+					pDstRow[2] = cv::saturate_cast<uchar>(red[red.size() / 2 + 1]);
+				}
+			}
+			std::cout << "Finished Bluring...\n";
+		}
+		
 		break;
 	}
 	case 2: // Lọc Gauss
@@ -124,9 +204,15 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 		gaussian_kernel = getGaussianKernel(kHeight, kWidth, DEFAULT_SIGMA_X, DEFAULT_SIGMA_Y);
 		std::cout << "Set kernel...\n";
 		convolution.SetKernel(gaussian_kernel, kWidth, kHeight);
-		std::cout << "Starting convolution...\n";
-		convolution.DoConvolution(sourceImage, destinationImage);
-		std::cout << "End convolution...\n";
+		if (mode == 1) {
+			convolution.DoConvolution(sourceImage, destinationImage);
+			std::cout << "End convolution...\n";
+		}
+
+		if (mode == 3) {
+			convolution.DoConvolutionColor(sourceImage, destinationImage);
+			std::cout << "End convolution...\n";
+		}
 		break;
 	}
 	default:
@@ -134,7 +220,6 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 		return 1;
 	}
 	return 0;
-}
 }
 
 Blur::Blur() {
