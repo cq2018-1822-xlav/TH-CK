@@ -1,5 +1,6 @@
 ﻿#include "EdgeDetector.h"
 #include "Kernel.h"
+#include "Converter.h"
 
 /*
 Hàm phát hiện biên cạnh của ảnh xám
@@ -32,22 +33,35 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 		return 1;
 	}
 
+	cv::Mat sourceImg;
+
+	if (sourceImage.channels() != 1) {
+		std::cout << "[LOG] Source image channels NOT equals to 1.\n";
+		Converter converter;
+		cv::Mat sourceClone = sourceImage.clone();
+		converter.Convert(sourceClone, sourceImg, 0);
+		converter.~Converter();
+		// cv::cvtColor(sourceImage, sourceImg, cv::COLOR_RGB2GRAY);
+		cv::namedWindow("Gray image", cv::WINDOW_AUTOSIZE);
+		cv::imshow("Gray image", sourceImg);
+	}
+	else {
+		sourceImg = sourceImage.clone();
+		cv::namedWindow("Gray image", cv::WINDOW_AUTOSIZE);
+		cv::imshow("Gray image", sourceImg);
+	}
+
 	// Chiều rộng của ảnh source
-	int widthSourceImage = sourceImage.cols;
+	int widthSourceImage = sourceImg.cols;
 
 	// Chiều cao của ảnh source
-	int heigthSourceImage = sourceImage.rows;
+	int heigthSourceImage = sourceImg.rows;
 
 	// Số channels của ảnh source
-	int sourceImageChannels = sourceImage.channels();
+	int sourceImageChannels = sourceImg.channels();
 
 	// Widthstep của ảnh source
-	size_t sourceWidthStep = sourceImage.step[0];
-
-	if (sourceImageChannels != 1) {
-		std::cout << "[EXCEPTION] Error occurs with source image channels.\n";
-		return 1;
-	}
+	size_t sourceWidthStep = sourceImg.step[0];
 
 	destinationImage = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
 	float eps = 1e-6;
@@ -64,12 +78,12 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 		cv::Mat gSobelY = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
 
 		std::cout << "Starting convolution with Sobel kernel X ...\n";
-		convolutionSobelX.DoConvolution(sourceImage, gSobelX);
+		convolutionSobelX.DoConvolution(sourceImg, gSobelX);
 
 		cv::namedWindow("Sobel X", cv::WINDOW_AUTOSIZE);
 		cv::imshow("Sobel X", gSobelX);
 
-		convolutionSobelY.DoConvolution(sourceImage, gSobelY);
+		convolutionSobelY.DoConvolution(sourceImg, gSobelY);
 
 		std::cout << "Starting convolution with Sobel kernel Y ...\n";
 		cv::namedWindow("Sobel Y", cv::WINDOW_AUTOSIZE);
@@ -105,12 +119,12 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 		cv::Mat gPrewittY = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
 
 		std::cout << "Starting convolution with Prewitt kernel X ...\n";
-		convolutionPrewittX.DoConvolution(sourceImage, gPrewittX);
+		convolutionPrewittX.DoConvolution(sourceImg, gPrewittX);
 
 		cv::namedWindow("Prewitt X", cv::WINDOW_AUTOSIZE);
 		cv::imshow(" Prewitt X", gPrewittX);
 
-		convolutionPrewittY.DoConvolution(sourceImage, gPrewittY);
+		convolutionPrewittY.DoConvolution(sourceImg, gPrewittY);
 
 		std::cout << "Starting convolution with Prewitt kernel Y ...\n";
 		cv::namedWindow("Prewitt Y", cv::WINDOW_AUTOSIZE);

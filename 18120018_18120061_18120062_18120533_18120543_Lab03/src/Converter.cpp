@@ -17,14 +17,6 @@ int Converter::RGB2GrayScale(const cv::Mat& sourceImage, cv::Mat& destinationIma
 		return 1; // Trả về 1
 	}
 
-	// Check the source image is RGB type?
-	if (sourceImage.type() != CV_8UC3)
-	{
-		// Chuyển đổi ảnh thất bại: in ra màn hình console tin nhắn
-		std::cout << "[EXCEPTION] Error with type of input image.\n";
-		return 1; // Trả về 1
-	}
-
 	// Chiều rộng của ảnh source
 	int width = sourceImage.cols;
 
