@@ -150,6 +150,73 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 	}
 	case 3:	 // Laplace
 	{
+		std::cout << "Starting Edge Detection with Laplace ...\n";
+		Convolution convolution;
+		std::cout << "Calculating Laplace kernel ...\n";
+		convolution.SetKernel(getLaplaceKernel(), 3, 3);
+
+		std::cout << "Starting convolution with Laplace kernel ...\n";
+		convolution.DoConvolution(sourceImg, destinationImage);
+
+		float threshold = -1;
+
+		// Số channels của ảnh destination
+		int destinationChannels = destinationImage.channels();
+
+		// Widthstep của ảnh destination
+		int destinationWidthStep = destinationImage.step[0];
+
+		// Con trỏ quản lý vùng nhớ data ảnh destination
+		uchar* ptrDestinationData = destinationImage.data;
+
+		for (int y = 0; y < heigthSourceImage; y++, ptrDestinationData += destinationWidthStep) {
+			uchar* ptrDestinationRow = ptrDestinationData;
+
+			for (int x = 0; x < widthSourceImage; x++, ptrDestinationRow += destinationChannels) {
+
+				uchar value = ptrDestinationRow[0];
+
+				threshold = value > threshold ? value : threshold;
+			}
+		}
+
+		threshold /= 4;
+
+		int offsets[9] = { -destinationWidthStep - 1, -destinationWidthStep, -destinationWidthStep + 1, -1, 0, 1, destinationWidthStep - 1, destinationWidthStep, destinationWidthStep + 1 };
+
+		for (int y = 1; y < heigthSourceImage; y++) {
+
+			for (int x = 1; x < widthSourceImage; x++) {
+
+				int count = 0;
+				// Đường chéo 1
+				if (abs(ptrDestinationData[offsets[0]] - ptrDestinationData[offsets[8]]) - eps > threshold) {
+					count = count + 1;
+				}
+
+				// Đường chéo 2
+				if (abs(ptrDestinationData[offsets[2]] - ptrDestinationData[offsets[6]]) - eps > threshold) {
+					count = count + 1;
+				}
+
+				// Trên dưới
+				if (abs(ptrDestinationData[offsets[1]] - ptrDestinationData[offsets[7]]) - eps > threshold) {
+					count = count + 1;
+				}
+
+				// Trái phải
+				// Trên dưới
+				if (abs(ptrDestinationData[offsets[3]] - ptrDestinationData[offsets[5]]) - eps > threshold) {
+					count = count + 1;
+				}
+
+				if (count >= 2) {
+					ptrDestinationData[offsets[4]] = 255;
+				}
+			
+			}
+		}
+
 		break;
 	}
 	}

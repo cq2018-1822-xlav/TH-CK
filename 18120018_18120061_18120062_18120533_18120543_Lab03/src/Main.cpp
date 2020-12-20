@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
 	cv::Mat  outputImage;
 	// convolution.DoConvolutionColor(inputImage, outputImage);
 	// blur.BlurImage(inputImage, outputImage, 17, 17, 0);
-	edgeDetector.DetectEdge(inputImage, outputImage, 17, 17, 1);
+	edgeDetector.DetectEdge(inputImage, outputImage, 17, 17, 3);
 	cv::namedWindow("Origin image", cv::WINDOW_AUTOSIZE);
 	cv::imshow("Origin image", inputImage);
 	//cv::namedWindow("Gray image", cv::WINDOW_AUTOSIZE);
