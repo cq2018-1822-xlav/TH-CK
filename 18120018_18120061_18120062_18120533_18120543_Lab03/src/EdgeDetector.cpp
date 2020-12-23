@@ -74,7 +74,11 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 		std::cout << "Calculating Sobel kernel ...\n";
 		convolutionSobelX.SetKernel(getSobelKernelX(), 3, 3);
 		convolutionSobelY.SetKernel(getSobelKernelY(), 3, 3);
+
+		// Ma trận ảnh dùng đến chứa kết quả tích chập ảnh nguồn với sobel X
 		cv::Mat gSobelX = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
+
+		// Ma trận ảnh dùng đến chứa kết quả tích chập ảnh nguồn với sobel Y
 		cv::Mat gSobelY = cv::Mat(heigthSourceImage, widthSourceImage, CV_8UC1, cv::Scalar(0));
 
 		std::cout << "Starting convolution with Sobel kernel X ...\n";
@@ -99,12 +103,12 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 				float fy = gSobelY.ptr<uchar>(i)[j];
 				float e = sqrt(fx * fx + fy * fy);
 				// std::cout << e << "\n";
-				if ((e - 25.0) > 1e-6) {
+				if ((e - 25.0) > eps) {
 					dataRow[j] = cv::saturate_cast<uchar>(255);
 				}
 			}
 		}
-		return 0;
+
 		break;
 	}
 	case 2:	 // Prewitt
@@ -140,12 +144,12 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 				float fy = gPrewittY.ptr<uchar>(i)[j];
 				float e = sqrt(fx * fx + fy * fy);
 				// std::cout << e << "\n";
-				if ((e - 30.0) > 1e-6) {
+				if ((e - 30.0) > eps) {
 					dataRow[j] = cv::saturate_cast<uchar>(255);
 				}
 			}
 		}
-		return 0;
+
 		break;
 	}
 	case 3:	 // Laplace
@@ -169,6 +173,7 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 		// Con trỏ quản lý vùng nhớ data ảnh destination
 		uchar* ptrDestinationData = destinationImage.data;
 
+		// Tìm giá trị màu lớn nhất trong ảnh destination
 		for (int y = 0; y < heigthSourceImage; y++, ptrDestinationData += destinationWidthStep) {
 			uchar* ptrDestinationRow = ptrDestinationData;
 
@@ -180,6 +185,7 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 			}
 		}
 
+		// 
 		threshold /= 4;
 
 		int offsets[9] = { -destinationWidthStep - 1, -destinationWidthStep, -destinationWidthStep + 1, -1, 0, 1, destinationWidthStep - 1, destinationWidthStep, destinationWidthStep + 1 };
@@ -205,7 +211,6 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 				}
 
 				// Trái phải
-				// Trên dưới
 				if (abs(ptrDestinationData[offsets[3]] - ptrDestinationData[offsets[5]]) - eps > threshold) {
 					count = count + 1;
 				}

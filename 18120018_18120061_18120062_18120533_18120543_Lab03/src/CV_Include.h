@@ -15,7 +15,6 @@
 
 // STL Include
 #include <math.h>
-#include <functional>
 #include <string>
 #include <vector>
 

@@ -97,10 +97,12 @@ int Convolution::mergeColorImg(cv::Mat& sourceImage, cv::Mat& blueLayer, cv::Mat
 
     if ((blueLayer.rows != greenLayer.rows) || (blueLayer.rows != redLayer.rows)) {
         std::cout << "[EXCEPTION] Error with input image.\n";
+        return 1;
     }
 
     if ((blueLayer.cols != greenLayer.cols) || (blueLayer.cols  != redLayer.cols)) {
         std::cout << "[EXCEPTION] Error with input image.\n";
+        return 1;
     }
 
     sourceImage = cv::Mat(blueLayer.rows, blueLayer.cols, CV_8UC3, cv::Scalar(0));
@@ -198,73 +200,94 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
     // Con trỏ quản lý vùng data Destination Image
     uchar* ptrDestinationData = destinationImage.data;
 
-    int dataSizeX = sourceImage.cols;
-    int dataSizeY = sourceImage.rows;
+    // Chiều dài của ảnh source
+    int sourceWidth = sourceImage.cols;
+
+    // Chiều cao của ảnh source
+    int sourceHeight = sourceImage.rows;
 
     int i, j, m, n, x, y, t;
     uchar** inPtr, * outPtr, * ptr;
 
-    int kernelSizeX = this->_kernelWidth;
-    int kernelSizeY = this->_kernelHeight;
+    // Chiều dài của kernel
+    int kernelWidth = this->_kernelWidth;
 
+    // Chiều cao của kernel
+    int kernelHeight = this->_kernelHeight;
+
+    // Hai điểm tọa độ tâm của kernel
     int kCenterX, kCenterY;
     int rowEnd, colEnd;                             // ending indice for section divider
     float sum;                                      // temp accumulation buffer
-    int k, kSize;
+    int k, kernelSize;
     
 
-    // check validity of params
+    // Kiểm tra tính hợp lệ của thông số
     if (!ptrSourceData || !ptrDestinationData || this->_kernel.empty())
     {
+        // Có tồn tại source data hay không?
         if (!ptrSourceData) {
             std::cout << "[EXCEPTION] Error occurs with source data.\n";
         }
 
+        // Có tồn tại destination data hay không?
         if (!ptrDestinationData) {
             std::cout << "[EXCEPTION] Error occurs with destination data.\n";
         }
 
+        // Kernel có rỗng không?
         if (this->_kernel.empty()) {
             std::cout << "[EXCEPTION] Error occurs with kernel data.\n";
         }
 
         return 1;
     }
-    if (dataSizeX <= 0 || kernelSizeX <= 0) return 1;
 
-    // find center position of kernel (half of kernel size)
-    kCenterX = kernelSizeX >> 1;
-    kCenterY = kernelSizeY >> 1;
-    kSize = kernelSizeX * kernelSizeY;              // total kernel size
+    
+    if (sourceWidth <= 0 || kernelWidth <= 0) {
+        return 1;
+    }
 
-    // allocate memeory for multi-cursor
-    inPtr = new unsigned char* [kSize];
-    if (!inPtr) return false;                        // allocation error
+    // Tìm vị trí trung tâm của kernel: Bằng shift right 1 kernelWidth và kernelHeight
+    kCenterX = kernelWidth >> 1;
+    kCenterY = kernelHeight >> 1;
+
+    // Diện tích kernel = kernelWidth * kernelHeight
+    kernelSize = kernelWidth * kernelHeight;             
+
+    // Khởi tạo vùng nhớ cho multi-cursor
+    inPtr = new unsigned char* [kernelSize];
+    // Nếu khởi tạo vùng nhớ thất bại
+    if (!inPtr) {
+        return 1;                        
+    }
 
     // set initial position of multi-cursor, NOTE: it is swapped instead of kernel
-    ptr = ptrSourceData + ((long long)dataSizeX * kCenterY + kCenterX); // the first cursor is shifted (kCenterX, kCenterY)
-    for (m = 0, t = 0; m < kernelSizeY; m = -~m)
+    // the first cursor is shifted (kCenterX, kCenterY)
+    ptr = ptrSourceData + ((long long)sourceWidth * kCenterY + kCenterX); 
+    for (m = 0, t = 0; m < kernelHeight; m = -~m)
     {
-        for (n = 0; n < kernelSizeX; n = -~n, t = -~t)
+        for (n = 0; n < kernelWidth; n = -~n, t = -~t)
         {
             inPtr[t] = ptr - n;
         }
-        ptr -= dataSizeX;
+        ptr -= sourceWidth;
     }
 
     // init working  pointers
     outPtr = ptrDestinationData;
 
-    rowEnd = dataSizeY - kCenterY;                  // bottom row partition divider
-    colEnd = dataSizeX - kCenterX;                  // right column partition divider
+    rowEnd = sourceHeight - kCenterY; // bottom row partition divider                  
+    colEnd = sourceWidth - kCenterX; // right column partition divider                 
 
-    // convolve rows from index=0 to index=kCenterY-1
+    // convolve rows từ index = 0 đến index = kCenterY - 1
     y = kCenterY;
     for (i = 0; i < kCenterY; i = -~i)
     {
-        // partition #1 ***********************************
+        // partition #1 - Phân vùng 01
         x = kCenterX;
-        for (j = 0; j < kCenterX; j = -~j)                // column from index=0 to index=kCenterX-1
+        // column từ index = 0 đến index = kCenterX - 1    
+        for (j = 0; j < kCenterX; j = -~j)             
         {
             sum = 0;
             t = 0;
@@ -272,212 +295,237 @@ int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationI
             {
                 for (n = 0; n <= x; n = -~n)
                 {
+                    // Tích chập
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
-                t += (kernelSizeX - x - 1);         // jump to next row
+                t += (kernelWidth - x - 1); // jump to next row         
             }
 
-            // store output
+            // Đưa ra output
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kernelSize; k = -~k) {
+                ++inPtr[k];// move all cursors to next
+            }
         }
 
-        // partition #2 ***********************************
-        for (j = kCenterX; j < colEnd; j=-~j)            // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
+        // partition #2 - Phân vùng 02
+        // column từ index = kCenterX đến index = (sourceWidth - kCenterX - 1)
+        for (j = kCenterX; j < colEnd; j=-~j)            
         {
             sum = 0;
             t = 0;
             for (m = 0; m <= y; m = -~m)
             {
-                for (n = 0; n < kernelSizeX; n = -~n)
+                for (n = 0; n < kernelWidth; n = -~n)
                 {
+                    // Tích chập
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
             }
 
-            // store output
+            // Đưa ra output
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kernelSize; k = -~k) {
+                ++inPtr[k]; // move all cursors to next
+            }
         }
 
-        // partition #3 ***********************************
+        // partition #3 - Phân vùng 03
+        // column từ index = (sourceWidth - kCenter) đến index = (sourceWidth - 1)
         x = 1;
-        for (j = colEnd; j < dataSizeX; j = -~j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
+        for (j = colEnd; j < sourceWidth; j = -~j)           
         {
             sum = 0;
             t = x;
             for (m = 0; m <= y; m = -~m)
             {
-                for (n = x; n < kernelSizeX; n = -~n)
+                for (n = x; n < kernelWidth; n = -~n)
                 {
+                    // Tích chập
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
-                t += x;                             // jump to next row
+                t += x; // jump to next row
             }
 
-            // store output
+            // Đưa ra output
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kernelSize; k = -~k) {
+                ++inPtr[k];    // move all cursors to next
+            }
         }
 
-        ++y;                                        // add one more row to convolve for next run
+        ++y; // add one more row to convolve for next run
     }
 
-    // convolve rows from index=kCenterY to index=(dataSizeY-kCenterY-1)
-    for (i = kCenterY; i < rowEnd; i = -~i)               // number of rows
+    // convolve rows từ index = sourceHeight đến index = (sourceHeight - kCenterY - 1)
+    for (i = kCenterY; i < rowEnd; i = -~i) // number of rows
     {
-        // partition #4 ***********************************
+        // partition #4 - Phân vùng 04
         x = kCenterX;
-        for (j = 0; j < kCenterX; j = -~j)                // column from index=0 to index=kCenterX-1
+        for (j = 0; j < kCenterX; j = -~j)  // column từ index = 0 đến index = kCenterX - 1
         {
             sum = 0;
             t = 0;
-            for (m = 0; m < kernelSizeY; m = -~m)
+            for (m = 0; m < kernelHeight; m = -~m)
             {
                 for (n = 0; n <= x; n = -~n)
                 {
+                    // Tích chập
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
-                t += (kernelSizeX - x - 1);
+                t += (kernelWidth - x - 1);
             }
 
-            // store output
+            // Đưa ra output
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kernelSize; k = -~k) {
+                ++inPtr[k];    // move all cursors to next
+            }
         }
 
-        // partition #5 ***********************************
-        for (j = kCenterX; j < colEnd; j = -~j)          // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
+        // partition #5 - Phân vùng 05
+        for (j = kCenterX; j < colEnd; j = -~j) // column từ index = kCenterX to index = (sourceWidth - kCenterX -1)
         {
             sum = 0;
             t = 0;
-            for (m = 0; m < kernelSizeY; m = -~m)
+            for (m = 0; m < kernelHeight; m = -~m)
             {
-                for (n = 0; n < kernelSizeX; n = -~n)
+                for (n = 0; n < kernelWidth; n = -~n)
                 {
+                    // Tích chập
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++inPtr[t]; // in this partition, all cursors are used to convolve. moving cursors to next is safe here
                     ++t;
                 }
             }
 
-            // store output
+            // Đưa ra output
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
         }
 
-        // partition #6 ***********************************
+        // partition #6 - Phân vùng 06
         x = 1;
-        for (j = colEnd; j < dataSizeX; j = -~j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
+        for (j = colEnd; j < sourceWidth; j = -~j)  // column from index = (sourceWidth - kCenter) to index = (sourceWidth - 1)
         {
             sum = 0;
             t = x;
-            for (m = 0; m < kernelSizeY; m = -~m)
+            for (m = 0; m < kernelHeight; m = -~m)
             {
-                for (n = x; n < kernelSizeX; n = -~n)
+                for (n = x; n < kernelWidth; n = -~n)
                 {
+                    // Tích chập
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
                 t += x;
             }
 
-            // store output
+            // Đưa ra output
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kernelSize; k = -~k) {
+                ++inPtr[k];    // move all cursors to next
+            }
         }
     }
 
-    // convolve rows from index=(dataSizeY-kCenterY) to index=(dataSizeY-1)
+    // convolve rows từ index = (sourceHeight - kCenterY) đến index = (sourceHeight - 1)
     y = 1;
-    for (i = rowEnd; i < dataSizeY; i = -~i)              // number of rows
+    for (i = rowEnd; i < sourceHeight; i = -~i) // number of rows
     {
-        // partition #7 ***********************************
+        // partition #7 - Phân vùng 07
         x = kCenterX;
-        for (j = 0; j < kCenterX; j = -~j)                 // column from index=0 to index=kCenterX-1
+        for (j = 0; j < kCenterX; j = -~j) // column từ index = 0 đến index = kCenterX - 1
         {
             sum = 0;
-            t = kernelSizeX * y;
+            t = kernelWidth * y;
 
-            for (m = y; m < kernelSizeY; m = -~m)
+            for (m = y; m < kernelHeight; m = -~m)
             {
                 for (n = 0; n <= x; ++n)
                 {
+                    // Tích chập
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
-                t += (kernelSizeX - x - 1);
+                t += (kernelWidth - x - 1);
             }
 
-            // store output
+            // Đưa ra output
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; k = -~k) ++inPtr[k];    // move all cursors to next
+            for (k = 0; k < kernelSize; k = -~k) {
+                ++inPtr[k]; // move all cursors to next
+            }
         }
 
-        // partition #8 ***********************************
-        for (j = kCenterX; j < colEnd; j = -~j)            // column from index=kCenterX to index=(dataSizeX-kCenterX-1)
+        // partition #8 - Phân vùng 08
+        for (j = kCenterX; j < colEnd; j = -~j)  // column từ index = kCenterX to index = (sourceWidth - kCenterX - 1)
         {
             sum = 0;
-            t = kernelSizeX * y;
-            for (m = y; m < kernelSizeY; m = -~m)
+            t = kernelWidth * y;
+            for (m = y; m < kernelHeight; m = -~m)
             {
-                for (n = 0; n < kernelSizeX; n = -~n)
+                for (n = 0; n < kernelWidth; n = -~n)
                 {
+                    // Tích chập
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
             }
 
-            // store output
+            // Đưa ra output
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; k = -~k) ++inPtr[k];
+            for (k = 0; k < kernelSize; k = -~k) {
+                ++inPtr[k];
+            }
         }
 
-        // partition #9 ***********************************
+        // partition #9 - Phân vùng 09
         x = 1;
-        for (j = colEnd; j < dataSizeX; j = -~j)           // column from index=(dataSizeX-kCenter) to index=(dataSizeX-1)
+        for (j = colEnd; j < sourceWidth; j = -~j)  // column từ index = (sourceWidth - kCenter) to index = (sourceWidth - 1)
         {
             sum = 0;
-            t = kernelSizeX * y + x;
-            for (m = y; m < kernelSizeY; m = -~m)
+            t = kernelWidth * y + x;
+            for (m = y; m < kernelHeight; m = -~m)
             {
-                for (n = x; n < kernelSizeX; n = -~n)
+                for (n = x; n < kernelWidth; n = -~n)
                 {
+                    // Tích chập
                     sum += *inPtr[t] * (this->_kernel[t]);
                     ++t;
                 }
                 t += x;
             }
 
-            // store output
+            // Đưa ra output
             *outPtr = (uchar)((float)fabs(sum) + 0.5f);
             ++outPtr;
             ++x;
-            for (k = 0; k < kSize; k = -~k) {
+            for (k = 0; k < kernelSize; k = -~k) {
                 ++(inPtr[k]); 
             }    // move all cursors to next
         }
 
-        ++y;                                        // the starting row index is increased
+        ++y; // the starting row index is increased
     }
 
     return 0;
@@ -503,13 +551,31 @@ int Convolution::DoConvolutionColor(const cv::Mat& sourceImage, cv::Mat& destina
 
     // Thao tác tách ảnh nguồn thành ba layer Blue, Green, Red
     // Thao tác tách ảnh nguồn ra Blue Layer bằng cách gọi phương thức separateColorImg bới param type = 0
-    this->separateColorImg(sourceImage, blueLayer, 0);
+    if (this->separateColorImg(sourceImage, blueLayer, 0) == 1) {
+        std::cout << "[EXCEPTION] Error when separate color image into Blue Layer.\n";
+        return 1;
+    }
+    else {
+        std::cout << "[LOG] Success separate color image into Blue Layer.\n";
+    }
 
     // Thao tác tách ảnh nguồn ra Green Layer bằng cách gọi phương thức separateColorImg bới param type = 1
-    this->separateColorImg(sourceImage, greenLayer, 1);
+    if (this->separateColorImg(sourceImage, greenLayer, 1) == 1) {
+        std::cout << "[EXCEPTION] Error when separate color image into Green Layer.\n";
+        return 1;
+    }
+    else {
+        std::cout << "[LOG] Success separate color image into Green Layer.\n";
+    }
 
     // Thao tác tách ảnh nguồn ra Red Layer bằng cách gọi phương thức separateColorImg bới param type = 2
-    this->separateColorImg(sourceImage, redLayer, 2);
+    if (this->separateColorImg(sourceImage, redLayer, 2) == 1) {
+        std::cout << "[EXCEPTION] Error when separate color image into Red Layer.\n";
+        return 1;
+    }
+    else {
+        std::cout << "[LOG] Success separate color image into Red Layer.\n";
+    }
 
     // Khởi tạo các ma trận Destination convolution cho các Layer: Blue, Green, Red
     cv::Mat blueLayerConvole = blueLayer.clone();
@@ -517,12 +583,38 @@ int Convolution::DoConvolutionColor(const cv::Mat& sourceImage, cv::Mat& destina
     cv::Mat redLayerConvole = redLayer.clone();
 
     // Thực thi Convolution 2D với từng layer bằng cách gọi phương thức DoConvolution với các param đúng theo pattern
-    this->DoConvolution(blueLayer, blueLayerConvole);
-    this->DoConvolution(greenLayer, greenLayerConvole);
-    this->DoConvolution(redLayer, redLayerConvole);
+    if (this->DoConvolution(blueLayer, blueLayerConvole) == 1) {
+        std::cout << "[EXCEPTION] Error do convolution for Blue Layer.\n";
+        return 1;
+    }
+    else {
+        std::cout << "[LOG] Success do convolution for Blue Layer.\n";
+    }
+
+    if (this->DoConvolution(greenLayer, greenLayerConvole) == 1) {
+        std::cout << "[EXCEPTION] Error do convolution for Green Layer.\n";
+        return 1;
+    }
+    else {
+        std::cout << "[LOG] Success do convolution for Green Layer.\n";
+    }
+
+    if (this->DoConvolution(redLayer, redLayerConvole) == 1) {
+        std::cout << "[EXCEPTION] Error do convolution for Red Layer.\n";
+        return 1;
+    }
+    else {
+        std::cout << "[LOG] Success do convolution for Red Layer.\n";
+    }
 
     // Thực thi thao tác gộp các layer Blue, Green, Red sau khi Convole để kết xuất ảnh kết quả bằng cách gọi phương thức mergeColorImg  với các param đúng theo pattern
-    this->mergeColorImg(destinationImage, blueLayerConvole, greenLayerConvole, redLayerConvole);
+    if (this->mergeColorImg(destinationImage, blueLayerConvole, greenLayerConvole, redLayerConvole) == 1) {
+        std::cout << "[EXCEPTION] Error when merge Blue, Green, Red layers.\n";
+        return 1;
+    }
+    else {
+        std::cout << "[LOG] Success merge Blue, Green, Red layers.\n";
+    }
 
     // Trả về 0: Thành công
     return 0;
@@ -543,3 +635,26 @@ Convolution::~Convolution()
         this->_kernel.clear();
     }
 }
+
+
+/*
+N - number of images
+K - kernel size
+W - output width
+H - input width
+C - number of input channels
+D - number of output channels
+Naive convolution
+
+for (int n = 0; n < N; ++n)
+    for (int d = 0; d < D; ++d)
+        for (int w = 0; w < W; ++w)
+            for (int h = 0; h < H; ++h)
+                float value = 0;
+                for (c = 0; c < C; ++c)
+                    for (kx = 0; kx < K; ++kx)
+                        for (ky = 0; ky < K; ++ky)
+                            value += kernel(kx, ky, c, d) * input(w + kx, h + ky, c, n)
+                output(wOut, hOut, cOut, n) = value
+  
+ */
