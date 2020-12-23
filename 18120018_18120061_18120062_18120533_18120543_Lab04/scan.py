@@ -13,6 +13,7 @@ class DocumentScanner:
         # resize image
         sourceImageClone = sourceImage.copy()
         sourceImageClone = cv.resize(sourceImageClone,(600,800))
+        sourceImage = cv.resize(sourceImage,(600,800))
         # convert image to grayscale
         grayscale = cv.cvtColor(sourceImageClone, cv.COLOR_BGR2GRAY)
         #blurr image to smooth
@@ -60,7 +61,7 @@ class DocumentScanner:
         dst = np.array([[0,0],[maxWidth-1, 0],[maxWidth-1, maxHeight-1], [0, maxHeight-1]], dtype="float32")
 
         M = cv.getPerspectiveTransform(rect, dst)
-        warp = cv.warpPerspective(sourceImageClone, M, (maxWidth, maxHeight))
+        warp = cv.warpPerspective(sourceImage, M, (maxWidth, maxHeight))
 
         destinationImage = cv.cvtColor(warp, cv.COLOR_BGR2GRAY)
         destinationImage = cv.resize(destinationImage,(600,800))
@@ -71,8 +72,8 @@ class DocumentScanner:
         # apply adaptive threshold to get black and white effect
         thresh = cv.adaptiveThreshold(
             sharpen, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 15)
-        
-        cv.imshow("Original Image",sourceImage)
+         
+        cv.imshow("Original Image", sourceImage)
         cv.imshow("Grayscale Image",grayscale)
         cv.imshow("Gaussian Blur Image", bluredImage)
         cv.imshow("Canny Edge Detect", edgeDectect)
@@ -82,9 +83,12 @@ class DocumentScanner:
         cv.waitKey(0)
         
          # save the transformed image
-        basename = 'result.jpg'
-        cv.imwrite(basename, thresh)
-        cv.destroyAllWindows()
+        cv.imwrite('gray.jpg', grayscale)
+        cv.imwrite('gaussianBlured.jpg', bluredImage)
+        cv.imwrite('canny.jpg', edgeDectect)
+        cv.imwrite('contours.jpg', sourceImageClone)
+        cv.imwrite('scanned.jpg',  destinationImage)
+        cv.imwrite('white effect.jpg', thresh)
         return thresh
 
 

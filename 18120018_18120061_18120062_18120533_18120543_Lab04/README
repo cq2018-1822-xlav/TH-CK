@@ -1,0 +1,2 @@
+Usage:
+``python scan.py --image <input_image_path>
