@@ -26,27 +26,29 @@ int main(int argc, char* argv[]) {
 	EdgeDetector edgeDetector;
 	Blur blur;
 
-	Convolution convolution;
+	// Convolution convolution;
 	// Kernel kernel;
-	convolution.SetKernel(getGaussianKernel(5, 5, 1, 2), 5, 5);
+	// convolution.SetKernel(getGaussianKernel(17, 17, 1, 2), 17, 17);
 	// kernel.displayKernel(convolution.GetKernel());
-	std::cout << convolution.GetKernel().size();
-	cv::Mat inputImage = cv::imread("E:/lena.jpg", cv::IMREAD_ANYCOLOR);
+	// std::cout << convolution.GetKernel().size();
+	// cv::Mat inputImage = cv::imread("E:/lena.jpg", cv::IMREAD_ANYCOLOR);
 	//cv::Mat inputImage2gray;
 	//cv::cvtColor(inputImage, inputImage2gray, cv::COLOR_BGR2GRAY);
-	cv::Mat  outputImage;
+	// cv::Mat  outputImage;
 	// convolution.DoConvolutionColor(inputImage, outputImage);
 	// blur.BlurImage(inputImage, outputImage, 17, 17, 0);
-	convolution.DoConvolutionColor(inputImage, outputImage);
-	cv::namedWindow("Origin image", cv::WINDOW_AUTOSIZE);
-	cv::imshow("Origin image", inputImage);
+	// convolution.DoConvolutionColor(inputImage, outputImage);
+	// blur.BlurImage(inputImage, outputImage, 17, 17, 2);
+	// edgeDetector.DetectEdge(inputImage, outputImage, 17, 17, 3);
+	// cv::namedWindow("Origin image", cv::WINDOW_AUTOSIZE);
+	// cv::imshow("Origin image", inputImage);
 	//cv::namedWindow("Gray image", cv::WINDOW_AUTOSIZE);
 	//cv::imshow("Gray image", inputImage2gray);
-	cv::namedWindow("Output image", cv::WINDOW_AUTOSIZE);
-	cv::imshow("Output image", outputImage);
-	cv::waitKey(0);
+	// cv::namedWindow("Output image", cv::WINDOW_AUTOSIZE);
+	// cv::imshow("Output image", outputImage);
+	// cv::waitKey(0);
 
-	cv::destroyAllWindows();
+	// cv::destroyAllWindows();
 
 
 	// Code for CLI
@@ -71,14 +73,15 @@ int main(int argc, char* argv[]) {
 
 		cv::Mat inputImage = cv::imread(argv[2], cv::IMREAD_ANYCOLOR);
 
-		if (!inputImage.data || inputImage.channels() != 3 || inputImage.channels() != 1) {
+		if (!inputImage.data) {
 			std::cout << "[EXCEPTION] Error occurs.\n";
 			return 1;
 		}
 
 		// Khởi tạo ảnh đầu ra
 		cv::Mat outputImage;
-		if (blur.BlurImage(inputImage, outputImage, kWidth, kHeight, 0) == 0) {
+		int res = blur.BlurImage(inputImage, outputImage, kWidth, kHeight, 0);
+		if (res == 0) {
 			std::cout << "[SUCCESS] Success filter image with mean filter.\n";
 			// Dispay ảnh ra màn hình
 			cv::namedWindow("Input image", cv::WINDOW_AUTOSIZE);
@@ -87,12 +90,16 @@ int main(int argc, char* argv[]) {
 			cv::imshow("Show result image", outputImage);
 
 			cv::waitKey(0);
-			cv::destroyWindow("Input image");
-			cv::destroyWindow("Show result image");
+			cv::destroyAllWindows();
+
+			inputImage.release();
+			outputImage.release();
 			return 0;
 		}
 		else {
 			std::cout << "[FAILURE] Failed filter image with mean filter.\n";
+			inputImage.release();
+			outputImage.release();
 			return 0;
 		}
 	}
@@ -118,7 +125,7 @@ int main(int argc, char* argv[]) {
 
 		cv::Mat inputImage = cv::imread(argv[2], cv::IMREAD_ANYCOLOR);
 
-		if (!inputImage.data || inputImage.channels() != 3 || inputImage.channels() != 1) {
+		if (!inputImage.data) {
 			std::cout << "[EXCEPTION] Error occurs.\n";
 			return 1;
 		}
@@ -134,8 +141,9 @@ int main(int argc, char* argv[]) {
 			cv::imshow("Show result image", outputImage);
 
 			cv::waitKey(0);
-			cv::destroyWindow("Input image");
-			cv::destroyWindow("Show result image");
+			cv::destroyAllWindows();
+			inputImage.release();
+			outputImage.release();
 			return 0;
 		}
 		else {
@@ -165,7 +173,7 @@ int main(int argc, char* argv[]) {
 		// Đọc ảnh đầu vào
 		cv::Mat inputImage = cv::imread(argv[2], cv::IMREAD_ANYCOLOR);
 
-		if (!inputImage.data || inputImage.channels() != 3 || inputImage.channels() != 1) {
+		if (!inputImage.data) {
 			std::cout << "[EXCEPTION] Error occurs.\n";
 			return 1;
 		}
@@ -180,8 +188,9 @@ int main(int argc, char* argv[]) {
 			cv::namedWindow("Show result image", cv::WINDOW_AUTOSIZE);
 			cv::imshow("Show result image", outputImage);
 			cv::waitKey(0);
-			cv::destroyWindow("Input image");
-			cv::destroyWindow("Show result image");
+			cv::destroyAllWindows();
+			inputImage.release();
+			outputImage.release();
 			return 0;
 		}
 		else {
@@ -190,21 +199,8 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	else if (__str_cmp__(argv[1], "--sobel")) {
-		if (argc < 5) {
+		if (argc > 3) {
 			std::cout << "[Exception] Error arguments.\n";
-			return 1;
-		}
-
-		int kWidth = atoi(argv[3]);
-		int kHeight = atoi(argv[4]);
-
-		if (kWidth < 0) {
-			std::cout << "[Exception]\n";
-			return 1;
-		}
-
-		if (kHeight < 0) {
-			std::cout << "[Exception]\n";
 			return 1;
 		}
 
@@ -212,13 +208,15 @@ int main(int argc, char* argv[]) {
 		// Đọc ảnh đầu vào
 		cv::Mat inputImage = cv::imread(argv[2], cv::IMREAD_ANYCOLOR);
 
-		if (!inputImage.data || inputImage.channels() != 3 || inputImage.channels() != 1) {
+		if (!inputImage.data) {
 			std::cout << "[EXCEPTION] Error occurs.\n";
 			return 1;
 		}
 
 		// Khởi tạo ảnh đầu ra
 		cv::Mat outputImage;
+		int kWidth = 3;
+		int kHeight = 3;
 		if (edgeDetector.DetectEdge(inputImage, outputImage, kWidth, kHeight, 1) == 0) {
 			std::cout << "[SUCCESS] Success edge detection with Sobel.\n";
 			// Dispay ảnh ra màn hình
@@ -228,8 +226,9 @@ int main(int argc, char* argv[]) {
 			cv::imshow("Show result image", outputImage);
 
 			cv::waitKey(0);
-			cv::destroyWindow("Input image");
-			cv::destroyWindow("Show result image");
+			cv::destroyAllWindows();
+			inputImage.release();
+			outputImage.release();
 			return 0;
 		}
 		else {
@@ -238,35 +237,23 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	else if (__str_cmp__(argv[1], "--prewitt")) {
-		if (argc < 5) {
+		if (argc > 3) {
 			std::cout << "[Exception] Error arguments.\n";
 			return 1;
 		}
 
-		int kWidth = atoi(argv[3]);
-		int kHeight = atoi(argv[4]);
-
-		if (kWidth < 0) {
-			std::cout << "[Exception]\n";
-			return 1;
-		}
-
-		if (kHeight < 0) {
-			std::cout << "[Exception]\n";
-			return 1;
-		}
-
-
 		// Đọc ảnh đầu vào
 		cv::Mat inputImage = cv::imread(argv[2], cv::IMREAD_ANYCOLOR);
 
-		if (!inputImage.data || inputImage.channels() != 3 || inputImage.channels() != 1) {
+		if (!inputImage.data) {
 			std::cout << "[EXCEPTION] Error occurs.\n";
 			return 1;
 		}
 
 		// Khởi tạo ảnh đầu ra
 		cv::Mat outputImage;
+		int kWidth = 3;
+		int kHeight = 3;
 		if (edgeDetector.DetectEdge(inputImage, outputImage, kWidth, kHeight, 2) == 0) {
 			std::cout << "[SUCCESS] Success edge detection with Prewitt.\n";
 			// Dispay ảnh ra màn hình
@@ -276,8 +263,9 @@ int main(int argc, char* argv[]) {
 			cv::imshow("Show result image", outputImage);
 
 			cv::waitKey(0);
-			cv::destroyWindow("Input image");
-			cv::destroyWindow("Show result image");
+			cv::destroyAllWindows();
+			inputImage.release();
+			outputImage.release();
 			return 0;
 		}
 		else {
@@ -286,36 +274,23 @@ int main(int argc, char* argv[]) {
 		}
 	}
 	else if (__str_cmp__(argv[1], "--laplace")) {
-		if (argc < 5) {
+		if (argc > 3) {
 			std::cout << "[Exception] Error arguments.\n";
 			return 1;
 		}
 
-		int kWidth = atoi(argv[3]);
-		int kHeight = atoi(argv[4]);
-
-		if (kWidth < 0) {
-			std::cout << "[Exception]\n";
-			return 1;
-		}
-
-		if (kHeight < 0) {
-			std::cout << "[Exception]\n";
-			return 1;
-		}
-
-
-
 		// Đọc ảnh đầu vào
 		cv::Mat inputImage = cv::imread(argv[2], cv::IMREAD_ANYCOLOR);
 
-		if (!inputImage.data || inputImage.channels() != 3 || inputImage.channels() != 1) {
+		if (!inputImage.data) {
 			std::cout << "[EXCEPTION] Error occurs.\n";
 			return 1;
 		}
 
 		// Khởi tạo ảnh đầu ra
 		cv::Mat outputImage;
+		int kWidth = 3;
+		int kHeight = 3;
 		if (edgeDetector.DetectEdge(inputImage, outputImage, kWidth, kHeight, 3) == 0) {
 			std::cout << "[SUCCESS] Success edge detection with Laplace.\n";
 			// Dispay ảnh ra màn hình
@@ -325,8 +300,9 @@ int main(int argc, char* argv[]) {
 			cv::imshow("Show result image", outputImage);
 
 			cv::waitKey(0);
-			cv::destroyWindow("Input image");
-			cv::destroyWindow("Show result image");
+			cv::destroyAllWindows();
+			inputImage.release();
+			outputImage.release();
 			return 0;
 		}
 		else {

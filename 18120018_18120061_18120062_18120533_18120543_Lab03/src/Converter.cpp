@@ -58,11 +58,16 @@ int Converter::RGB2GrayScale(const cv::Mat& sourceImage, cv::Mat& destinationIma
 			// Lấy giá trị kênh màu Red của ảnh source
 			uchar red = ptrSourceRow[2];
 
-			// Tính toán giá trị độ xám: // 0.2989 R + 0.5870 G + 0.1141 B
-			uchar grayValue = (uchar)(0.1141 * blue + 0.5870 * green + 0.2989 * red);
+			// Tính toán giá trị độ xám
+			int gray = 0;
+			gray += blue;
+			gray += ((green << 2) + green);
+			gray += (red << 1);
+
+			gray >>= 3;
 
 			// Gán giá trị độ xám vừa tính được vào kênh vào của ảnh destination
-			ptrDestinationRow[0] = grayValue;
+			ptrDestinationRow[0] = (uchar)gray;
 		}
 	}
 	return 1;

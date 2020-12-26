@@ -195,6 +195,8 @@ Hàm trả về
 */
 int Convolution::DoConvolution(const cv::Mat& sourceImage, cv::Mat& destinationImage)
 {
+    // Tham khảo: http://www.songho.ca/dsp/convolution/convolution.html
+
     // Con trỏ quản lý vùng data Source Image
     uchar* ptrSourceData = sourceImage.data;
     // Con trỏ quản lý vùng data Destination Image
