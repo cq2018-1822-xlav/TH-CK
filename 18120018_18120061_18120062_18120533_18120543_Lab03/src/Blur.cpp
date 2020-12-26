@@ -67,7 +67,17 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 		return 1;
 	}
 
-	
+	// Chiều rộng của ảnh destination
+	int widthDestinationImage = sourceImage.cols;
+
+	// Chiều cao của ảnh destination
+	int heigthDestinationImage = sourceImage.rows;
+
+	// Số channels của ảnh destination
+	int destinationImageChannels = sourceImage.channels();
+
+	// Widthstep của ảnh destination
+	size_t destinationWidthStep = sourceImage.step[0];
 
 	// Switch method
 	switch (method) {
@@ -113,7 +123,7 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 		if (mode == 1) {
 
 			std::vector<int> offsets;
-			std::cout << "Calculating kernel center...\n";
+			std::cout << "[LOG] Calculating kernel center...\n";
 			for (int y = -kernelCenterHeight; y <= kernelCenterHeight; y++)
 			{
 				for (int x = -kernelCenterWidth; x <= kernelCenterWidth; x++)
@@ -121,12 +131,16 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 					offsets.push_back(y* sourceWidthStep + x);
 				}
 			}
-			std::cout << "Bluring...\n";
-			for (int i = 0; i < destinationImage.rows; i++) {
-				uchar* dataRow = destinationImage.ptr<uchar>(i);
-				for (int j = 0; j < destinationImage.cols; j++) {
-					int i_source = i + (kWidth / 2), j_source = j + (kHeight / 2);
-					uchar* pSource = p + ((long long)i_source * sourceWidthStep + (long long)j_source * sourceImageChannels);
+
+			std::cout << "[LOG] Bluring...\n";
+
+			for (int y = 0; y < heigthDestinationImage; y++) {
+				uchar* dataRow = destinationImage.ptr<uchar>(y);
+
+				for (int x = 0; x < widthDestinationImage; x++) {
+					int x_source = x + (kWidth / 2), y_source = y + (kHeight / 2);
+
+					uchar* pSource = p + ((long long)x_source * sourceWidthStep + (long long)y_source * sourceImageChannels);
 
 					std::vector<uchar> value;
 					for (int k = 0; k < offsets.size(); k++) {
@@ -134,11 +148,11 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 					}
 
 					sort(value.begin(), value.begin() + value.size());
-					dataRow[j] = cv::saturate_cast<uchar>(value[value.size() / 2 + 1]);
+					dataRow[x] = cv::saturate_cast<uchar>(value[value.size() / 2 + 1]);
 				}
 			}
 
-			std::cout << "Finished Bluring...\n";
+			std::cout << "[LOG] Finished Bluring...\n";
 		}
 
 
@@ -153,7 +167,7 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 
 					for (int channel = 0; channel < sourceImageChannels; channel++)
 					{
-						offsets[channel].push_back(y * sourceWidthStep + x * sourceImageChannels * channel);
+						offsets[channel].push_back(y * sourceWidthStep + (long long)x * sourceImageChannels * channel);
 					}
 				}
 			}
@@ -167,8 +181,8 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 				uchar* pDstRow = pDstData;
 
 				for (int x = 0; x < widthSourceImage; x++, pDstRow += destinationImage.channels()) {
-					int i_source = y + (kWidth / 2), j_source = x + (kHeight / 2);
-					uchar* pSource = pSrcData + ((long long)i_source * sourceWidthStep + (long long)j_source * sourceImageChannels);
+					int y_source = y + (kWidth / 2), x_source = x + (kHeight / 2);
+					uchar* pSource = pSrcData + ((long long)y_source * sourceWidthStep + (long long)x_source * sourceImageChannels);
 
 					std::vector<uchar> blue;
 					std::vector<uchar> green;
@@ -184,6 +198,7 @@ int Blur::BlurImage(const cv::Mat& sourceImage, cv::Mat& destinationImage, int k
 					sort(blue.begin(), blue.begin() + blue.size());
 					sort(green.begin(), green.begin() + green.size());
 					sort(red.begin(), red.begin() + red.size());
+
 					pDstRow[0] = cv::saturate_cast<uchar>(blue[blue.size() / 2 + 1]);
 					pDstRow[1] = cv::saturate_cast<uchar>(green[green.size() / 2 + 1]);
 					pDstRow[2] = cv::saturate_cast<uchar>(red[red.size() / 2 + 1]);
