@@ -197,7 +197,7 @@ int EdgeDetector::DetectEdge(const cv::Mat& sourceImage, cv::Mat& destinationIma
 		int destinationChannels = destinationImage.channels();
 
 		// Widthstep của ảnh destination
-		int destinationWidthStep = destinationImage.step[0];
+		size_t destinationWidthStep = destinationImage.step[0];
 
 		// Con trỏ quản lý vùng nhớ data ảnh destination
 		uchar* ptrDestinationData = destinationImage.data;
