@@ -7,32 +7,87 @@ class DocumentScanner:
     def __init__(self) -> None:
         super().__init__()
 
+    def autoCanny(self, image, sigma=0.33):
+        # Compute the median of the single channel pixel intensities
+        # medianChannel = np.median(image, axis=(0, 1))
+        # median = np.median(medianChannel)
+
+        median = np.median(image)
+
+        lower = int(max(0, (1.0 - sigma) * median))
+        upper = int(min(255, (1.0 + sigma) * median))
+        edge = cv.Canny(image, lower, upper)
+
+        return edge
+
     def scan(self, imagePath):
-        # read image
+        # Read image
         sourceImage = cv.imread(imagePath, 1)
-        # resize image
+        
+        # Image processing in clone
         sourceImageClone = sourceImage.copy()
-        sourceImageClone = cv.resize(sourceImageClone,(600,800))
-        sourceImage = cv.resize(sourceImage,(600,800))
-        # convert image to grayscale
+
+        # old_height/old_width
+        ratio = sourceImage.shape[0] / sourceImage.shape[1]
+
+        # Only resize when image's width > 600
+        # Because Canny's algorithms can take so long
+        if sourceImage.shape[1] > 600:
+            # Resize (width, width*ratio)
+            sourceImageClone = cv.resize(
+                sourceImageClone, (600, round(600*ratio)))
+            sourceImage = cv.resize(sourceImage, (600, round(600 * ratio)))
+
+        # Increase contrast
+        # sourceImageClone = cv.convertScaleAbs(sourceImageClone, alpha=2, beta=0)
+
+        # Convert image to grayscale
         grayscale = cv.cvtColor(sourceImageClone, cv.COLOR_BGR2GRAY)
-        #blurr image to smooth
-        bluredImage = cv.GaussianBlur(grayscale, (5,5),0) 
-        #finding edges 
-        edgeDectect = cv.Canny(bluredImage, 0, 50) 
-        #find contours in thresholded image and sort them according to decreasing area
+
+
+        ##########
+        # Blur image
+        ##########
+
+        # Gaussian is not working well in noise and can also blur edge
+        # bluredImage = cv.GaussianBlur(grayscale, (5,5),0) 
+        # bluredImage = cv.bilateralFilter(sourceImageClone, 9, 50, 75)
+        bluredImage = cv.bilateralFilter(grayscale, 9, 50, 50)
+
+
+        ##########
+        # Finding edges 
+        ##########
+
+        # Sigma: 33%
+        edgeDectect = self.autoCanny(bluredImage, 0.33)
+
+
+        ##########
+        # Find contours
+        ##########
+
+        # Data structure: List
+        # Compress contours: CHAIN_APPOX_SIMPLE
+        # Sort contours base on area
         contours, hierarchy = cv.findContours(edgeDectect, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key=cv.contourArea, reverse= True) 
-        #contour approximation 
+
+        # Find matching contour
         for i in contours:
 	        elip =  cv.arcLength(i, True)
-	        approx = cv.approxPolyDP(i,0.08*elip, True)
+	        approx = cv.approxPolyDP(i,0.01*elip, True)
 
+            # Ordinary papers have 4 corner
 	        if len(approx) == 4 : 
 		        doc = approx 
 		        break
+
+
         #draw contours 
         cv.drawContours(sourceImageClone, [doc], -1, (0, 255, 0), 2)
+        
+        
         #reshape to avoid errors ahead
         doc=doc.reshape((4,2))
         #create a new array and initialize 
@@ -64,7 +119,7 @@ class DocumentScanner:
         warp = cv.warpPerspective(sourceImage, M, (maxWidth, maxHeight))
 
         destinationImage = cv.cvtColor(warp, cv.COLOR_BGR2GRAY)
-        destinationImage = cv.resize(destinationImage,(600,800))
+        # destinationImage = cv.resize(destinationImage,(600,800))
 
         # sharpen image
         sharpen = cv.GaussianBlur(destinationImage, (0, 0), 3)
@@ -73,17 +128,17 @@ class DocumentScanner:
         thresh = cv.adaptiveThreshold(
             sharpen, 255, cv.ADAPTIVE_THRESH_GAUSSIAN_C, cv.THRESH_BINARY, 21, 15)
          
-        cv.imshow("Original Image", sourceImage)
-        cv.imshow("Grayscale Image",grayscale)
-        cv.imshow("Gaussian Blur Image", bluredImage)
-        cv.imshow("Canny Edge Detect", edgeDectect)
-        cv.imshow("Contours", sourceImageClone)
-        cv.imshow("Scanned.jpg", destinationImage)
-        cv.imshow("white effect.jpg", thresh)
-        cv.waitKey(0)
+        # cv.imshow("Original Image", sourceImage)
+        # cv.imshow("Grayscale Image",grayscale)
+        # cv.imshow("Gaussian Blur Image", bluredImage)
+        # cv.imshow("Canny Edge Detect", edgeDectect)
+        # cv.imshow("Contours", sourceImageClone)
+        # cv.imshow("Scanned.jpg", destinationImage)
+        # cv.imshow("white effect.jpg", thresh)
+        # cv.waitKey(0)
         
-         # save the transformed image
-        cv.imwrite('gray.jpg', grayscale)
+        # save the transformed image
+        # cv.imwrite('gray.jpg', grayscale)
         cv.imwrite('gaussianBlured.jpg', bluredImage)
         cv.imwrite('canny.jpg', edgeDectect)
         cv.imwrite('contours.jpg', sourceImageClone)
