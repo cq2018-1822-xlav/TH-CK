@@ -3,3 +3,6 @@ intermediates
 bin
 
 env
+result
+slice
+__pycache__

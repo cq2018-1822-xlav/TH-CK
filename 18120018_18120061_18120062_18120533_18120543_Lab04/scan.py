@@ -3,65 +3,81 @@ import cv2 as cv
 import os
 import argparse
 
+import SliceImage
+import Utils
+
 class DocumentScanner:
     def __init__(self) -> None:
         super().__init__()
 
-    def autoCanny(self, image, sigma=0.33):
-        # Compute the median of the single channel pixel intensities
-        # medianChannel = np.median(image, axis=(0, 1))
-        # median = np.median(medianChannel)
-
-        median = np.median(image)
-
-        lower = int(max(0, (1.0 - sigma) * median))
-        upper = int(min(255, (1.0 + sigma) * median))
-        edge = cv.Canny(image, lower, upper)
-
-        return edge
 
     def scan(self, imagePath):
-        # Read image
-        sourceImage = cv.imread(imagePath, 1)
-        
-        # Image processing in clone
-        sourceImageClone = sourceImage.copy()
+        sourceImage = cv.imread(imagePath, 1) # Read original image
 
         # old_height/old_width
         ratio = sourceImage.shape[0] / sourceImage.shape[1]
 
         # Only resize when image's width > 600
-        # Because Canny's algorithms can take so long
+        # Because Canny's algorithms can take too long
         if sourceImage.shape[1] > 600:
             # Resize (width, width*ratio)
-            sourceImageClone = cv.resize(
-                sourceImageClone, (600, round(600*ratio)))
             sourceImage = cv.resize(sourceImage, (600, round(600 * ratio)))
 
-        # Increase contrast
-        # sourceImageClone = cv.convertScaleAbs(sourceImageClone, alpha=2, beta=0)
+        # Create clone image
+        sourceImageClone = sourceImage.copy() 
+
 
         # Convert image to grayscale
+        # _ Histograms Equalization support grayscale
+        # _ Canny work better with grayscale
         grayscale = cv.cvtColor(sourceImageClone, cv.COLOR_BGR2GRAY)
+        cv.imwrite('gray.jpg', grayscale)
+
+        sliceImage = SliceImage.SliceImage(grayscale, 4, 4)
+        sliceImage.divide()
+        
+        # Blur to decrease detail
+        blurContrast = SliceImage.SliceImage(grayscale, 4, 4)
+        blurContrast.divide()
+        blurContrast.blur(50, 50)
+        contrast = blurContrast.contrast()
 
 
-        ##########
-        # Blur image
-        ##########
+        if contrast < 25: # Low contrast
+            ##########
+            # Histograms Equalization
+            ##########
 
-        # Gaussian is not working well in noise and can also blur edge
-        # bluredImage = cv.GaussianBlur(grayscale, (5,5),0) 
-        # bluredImage = cv.bilateralFilter(sourceImageClone, 9, 50, 75)
-        bluredImage = cv.bilateralFilter(grayscale, 9, 50, 50)
+            equalization = cv.equalizeHist(grayscale)
 
+            # Reduce noise
+            median = cv.medianBlur(equalization,5)
+            cv.imwrite('median.jpg', median)
+
+            sliceImage.image = median 
+            sliceImage.divide()
+            sliceImage.blur(70, 70)
+            
+        else: # High contrast
+            sliceImage.blur(50, 50)
+        
+        sliceImage.edge()
+        sliceImage.merge()
 
         ##########
         # Finding edges 
         ##########
 
-        # Sigma: 33%
-        edgeDectect = self.autoCanny(bluredImage, 0.33)
+        edgeDectect = sliceImage.image 
+        cv.imwrite('canny.jpg', edgeDectect)
 
+        # Sharpen image
+        # sharpen = cv.GaussianBlur(edgeDectect, (0, 0), 3)
+        # sharpen = cv.addWeighted(edgeDectect, 1.5, sharpen, -0.5, 0)
+
+        kernel = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
+        dilation = cv.dilate(edgeDectect, kernel, 1)
+        cv.imwrite('dilation.jpg', dilation)
 
         ##########
         # Find contours
@@ -70,22 +86,23 @@ class DocumentScanner:
         # Data structure: List
         # Compress contours: CHAIN_APPOX_SIMPLE
         # Sort contours base on area
-        contours, hierarchy = cv.findContours(edgeDectect, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
+        contours, hierarchy = cv.findContours(dilation, cv.RETR_LIST, cv.CHAIN_APPROX_SIMPLE)
         contours = sorted(contours, key=cv.contourArea, reverse= True) 
 
         # Find matching contour
         for i in contours:
 	        elip =  cv.arcLength(i, True)
-	        approx = cv.approxPolyDP(i,0.01*elip, True)
+	        approx = cv.approxPolyDP(i, 0.08*elip, True)
 
             # Ordinary papers have 4 corner
 	        if len(approx) == 4 : 
 		        doc = approx 
 		        break
 
-
+        
         #draw contours 
         cv.drawContours(sourceImageClone, [doc], -1, (0, 255, 0), 2)
+        cv.imwrite('contours.jpg', sourceImageClone)
         
         
         #reshape to avoid errors ahead
@@ -119,7 +136,6 @@ class DocumentScanner:
         warp = cv.warpPerspective(sourceImage, M, (maxWidth, maxHeight))
 
         destinationImage = cv.cvtColor(warp, cv.COLOR_BGR2GRAY)
-        # destinationImage = cv.resize(destinationImage,(600,800))
 
         # sharpen image
         sharpen = cv.GaussianBlur(destinationImage, (0, 0), 3)
@@ -138,11 +154,11 @@ class DocumentScanner:
         # cv.waitKey(0)
         
         # save the transformed image
-        # cv.imwrite('gray.jpg', grayscale)
-        cv.imwrite('gaussianBlured.jpg', bluredImage)
-        cv.imwrite('canny.jpg', edgeDectect)
-        cv.imwrite('contours.jpg', sourceImageClone)
-        cv.imwrite('scanned.jpg',  destinationImage)
+        
+        
+        
+        
+        cv.imwrite('scanned.jpg',  warp)
         cv.imwrite('white effect.jpg', thresh)
         return thresh
 
